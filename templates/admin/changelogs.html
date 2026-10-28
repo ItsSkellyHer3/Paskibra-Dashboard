@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Catatan Pembaruan{% endblock %}
+
+{% block head %}
+<style>
+    .changelog-admin { max-width: 980px; margin: 0 auto; }
+    .changelog-admin h1 { margin: 0 0 8px; font-size: clamp(1.55rem, 4vw, 2rem); }
+    .changelog-intro { margin: 0 0 24px; color: var(--md-sys-color-on-surface-variant); }
+    .changelog-form, .changelog-row { padding: clamp(16px, 3vw, 24px); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 18px; background: var(--md-sys-color-surface-container-lowest); }
+    .changelog-form { margin-bottom: 26px; }
+    .changelog-form-grid { display: grid; grid-template-columns: minmax(140px, .6fr) minmax(160px, .8fr) minmax(0, 2fr); gap: 14px; }
+    .changelog-form label { display: block; margin-bottom: 7px; font-size: .85rem; font-weight: 650; }
+    .changelog-form input, .changelog-form select, .changelog-form textarea { width: 100%; padding: 11px 12px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 10px; color: var(--md-sys-color-on-surface); background: var(--md-sys-color-surface); font: inherit; }
+    .changelog-form textarea { min-height: 112px; resize: vertical; }
+    .changelog-list { display: grid; gap: 12px; }
+    .changelog-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .changelog-row h2 { margin: 0 0 8px; font-size: 1rem; }
+    .changelog-row p { margin: 0; color: var(--md-sys-color-on-surface-variant); line-height: 1.55; white-space: pre-wrap; }
+    .changelog-meta { margin-bottom: 8px; color: var(--md-sys-color-outline); font-size: .8rem; }
+    @media (max-width: 700px) { .changelog-form-grid { grid-template-columns: 1fr; } .changelog-row { flex-direction: column; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="changelog-admin slide-up">
+    <h1>Catatan pembaruan</h1>
+    <p class="changelog-intro">Terbitkan informasi fitur, perbaikan, dan peningkatan yang akan tampil di menu Pembaruan Aplikasi.</p>
+
+    <form class="changelog-form" method="POST">
+        <h2 style="margin: 0 0 18px; font-size: 1.05rem;">Tambah catatan</h2>
+        <div class="changelog-form-grid">
+            <div>
+                <label for="changelog-version">Versi</label>
+                <input id="changelog-version" name="version" maxlength="30" placeholder="2.1.0" required>
+            </div>
+            <div>
+                <label for="changelog-category">Jenis pembaruan</label>
+                <select id="changelog-category" name="category" required>
+                    <option value="New">Fitur baru</option>
+                    <option value="Improvement">Peningkatan</option>
+                    <option value="Fix">Perbaikan</option>
+                </select>
+            </div>
+            <div>
+                <label for="changelog-content">Ringkasan pembaruan</label>
+                <textarea id="changelog-content" name="content" maxlength="4000" placeholder="Jelaskan apa yang berubah untuk anggota…" required></textarea>
+            </div>
+        </div>
+        <button class="btn btn-primary" type="submit" style="margin-top: 16px;">
+            <span class="material-symbols-outlined">publish</span> Terbitkan pembaruan
+        </button>
+    </form>
+
+    <h2 style="margin: 0 0 14px; font-size: 1.1rem;">Riwayat terbit</h2>
+    <div class="changelog-list">
+        {% for item in changelogs %}
+        <article class="changelog-row">
+            <div>
+                <div class="changelog-meta">Versi {{ item.version }} · {{ item.category }} · {{ item.created_at }}</div>
+                <p>{{ item.content }}</p>
+            </div>
+            <form method="POST" action="{{ url_for('admin.delete_changelog', id=item.id) }}" onsubmit="return confirm('Hapus catatan pembaruan ini?')">
+                <button type="submit" class="btn btn-tonal" aria-label="Hapus catatan versi {{ item.version }}" style="color: var(--md-sys-color-error);">
+                    <span class="material-symbols-outlined">delete</span> Hapus
+                </button>
+            </form>
+        </article>
+        {% else %}
+        <div class="changelog-row" style="color: var(--md-sys-color-on-surface-variant);">Belum ada catatan pembaruan.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

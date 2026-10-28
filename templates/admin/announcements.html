@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Manajemen Pengumuman{% endblock %}
+
+{% block head %}
+<style>
+    .ann-list-container {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 24px;
+    }
+    .form-sticky {
+        position: sticky;
+        top: 88px;
+    }
+    .ann-item {
+        background: var(--md-sys-color-surface);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        border-radius: 24px;
+        padding: 20px;
+        margin-bottom: 16px;
+        transition: all 0.2s;
+        position: relative;
+    }
+    .ann-item:hover {
+        border-color: var(--md-sys-color-primary);
+        box-shadow: var(--elevation-1);
+    }
+    .ann-item.pinned {
+        border-left: 6px solid var(--md-sys-color-primary);
+        background: var(--md-sys-color-primary-container);
+    }
+    .category-tag {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        background: var(--md-sys-color-surface-container-high);
+    }
+    .cat-latihan { background: #E8F5E9; color: #1B5E20; }
+    .cat-rapat { background: #E3F2FD; color: #0D47A1; }
+    .cat-penting { background: #FFEBEE; color: #B71C1C; }
+    .cat-upacara { background: #FFF3E0; color: #E65100; }
+    
+    @media (max-width: 900px) {
+        .ann-list-container { grid-template-columns: 1fr; }
+        .form-sticky { position: static; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <div style="margin-bottom: 24px;">
+        <h1 style="font-weight: 700; font-size: 1.75rem;">Manajemen Informasi</h1>
+        <p style="color: var(--md-sys-color-on-surface-variant);">Kelola pengumuman dan pemberitahuan resmi satuan.</p>
+    </div>
+
+    <div class="ann-list-container">
+        <!-- Add Form -->
+        <div class="form-sticky">
+            <div class="card" style="background: var(--md-sys-color-surface); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 28px;">
+                <h3 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+                    <span class="material-symbols-outlined">add_comment</span>
+                    Tulis Pengumuman
+                </h3>
+                <form action="{{ url_for('admin.announcements') }}" method="POST" enctype="multipart/form-data">
+                    <div class="input-group mb-3">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant);">Judul</label>
+                        <input type="text" name="title" required placeholder="Judul yang menarik dan jelas" style="width: 100%; height: 56px; border-radius: 16px; border: 1px solid var(--md-sys-color-outline-variant); padding: 0 16px; background: var(--md-sys-color-surface-container-low);">
+                    </div>
+
+                    <div class="mb-3">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant);">Kategori</label>
+                        <select name="category" style="width: 100%; height: 56px; border-radius: 16px; border: 1px solid var(--md-sys-color-outline-variant); padding: 0 16px; background: var(--md-sys-color-surface-container-low);">
+                            <option value="Umum">Umum</option>
+                            <option value="Latihan">Latihan</option>
+                            <option value="Upacara">Upacara</option>
+                            <option value="Rapat">Rapat</option>
+                            <option value="Informasi Sekolah">Informasi Sekolah</option>
+                            <option value="Pemberitahuan Penting">Pemberitahuan Penting</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant);">Isi Pengumuman</label>
+                        <textarea name="content" required style="width: 100%; min-height: 150px; border-radius: 16px; background: var(--md-sys-color-surface-container-low); border: 1px solid var(--md-sys-color-outline-variant); padding: 16px; font-family: inherit; font-size: 1rem;" placeholder="Tuliskan detail informasi di sini..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant);">Lampiran (Opsional: PDF/Image)</label>
+                        <input type="file" name="attachment" style="width: 100%; font-size: 0.85rem;">
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px; background: var(--md-sys-color-surface-container-high); border-radius: 16px;">
+                        <input type="checkbox" name="is_pinned" id="is_pinned" style="width: 20px; height: 20px;">
+                        <label for="is_pinned" style="font-size: 0.875rem; font-weight: 600; cursor: pointer;">Sematkan (Pin ke Atas)</label>
+                    </div>
+
+                    <div style="margin-top: 24px;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%; height: 64px; border-radius: 20px;">
+                            <span class="material-symbols-outlined">send</span>
+                            <span>Publikasikan</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- List -->
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 8px;">
+                <h3 style="margin: 0; font-size: 1.25rem;">Pengumuman Aktif</h3>
+                <div style="font-size: 0.8rem; color: var(--md-sys-color-outline);">{{ announcements|length }} Terbit</div>
+            </div>
+
+            <div style="max-height: 800px; overflow-y: auto; padding-right: 4px;">
+                {% for ann in announcements %}
+                <div class="ann-item {% if ann.is_pinned %}pinned{% endif %}">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="category-tag 
+                                    {% if ann.category == 'Latihan' %}cat-latihan
+                                    {% elif ann.category == 'Rapat' %}cat-rapat
+                                    {% elif ann.category == 'Pemberitahuan Penting' %}cat-penting
+                                    {% elif ann.category == 'Upacara' %}cat-upacara
+                                    {% endif %}">
+                                    {{ ann.category }}
+                                </span>
+                                {% if ann.is_pinned %}
+                                <span class="material-symbols-outlined" style="font-size: 16px; color: var(--md-sys-color-primary); font-variation-settings: 'FILL' 1;">push_pin</span>
+                                {% endif %}
+                            </div>
+                            <h4 style="margin: 8px 0 0; font-size: 1.15rem; font-weight: 700; color: var(--md-sys-color-on-surface);">{{ ann.title }}</h4>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick='openEditModal({{ ann|tojson }})' class="btn btn-icon" title="Edit" style="width: 36px; height: 36px;">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">edit</span>
+                            </button>
+                            <a href="{{ url_for('admin.toggle_pin_announcement', id=ann.id) }}" class="btn btn-icon" title="Toggle Pin" style="width: 36px; height: 36px;">
+                                <span class="material-symbols-outlined" style="font-size: 20px; {% if ann.is_pinned %}font-variation-settings: 'FILL' 1;{% endif %}">push_pin</span>
+                            </a>
+                            <form action="{{ url_for('admin.delete_announcement', id=ann.id) }}" method="POST" style="display: inline;">
+                                <button type="submit" class="btn btn-icon" style="color: var(--md-sys-color-error); width: 36px; height: 36px;" onclick="return confirm('Hapus pengumuman ini?')">
+                                    <span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <p style="font-size: 0.95rem; color: var(--md-sys-color-on-surface-variant); line-height: 1.5; margin: 0 0 16px; white-space: pre-wrap;">{{ ann.content }}</p>
+
+                    {% if ann.attachment %}
+                    <div style="margin-bottom: 16px; padding: 12px; background: var(--md-sys-color-surface-container-low); border-radius: 12px; display: flex; align-items: center; gap: 12px;">
+                        <span class="material-symbols-outlined" style="color: var(--md-sys-color-primary);">attachment</span>
+                        <a href="{{ url_for('static', filename='uploads/' + ann.attachment) }}" target="_blank" style="font-size: 0.85rem; font-weight: 600; color: var(--md-sys-color-primary); text-decoration: none;">Lihat Lampiran</a>
+                    </div>
+                    {% endif %}
+
+                    <div style="font-size: 0.75rem; color: var(--md-sys-color-outline); border-top: 1px solid var(--md-sys-color-outline-variant); padding-top: 12px;">
+                        Diterbitkan: {{ ann.created_at[:16] }} • Oleh: {{ ann.author_name }}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not announcements %}
+                <div style="padding: 64px; text-align: center; color: var(--md-sys-color-outline); background: var(--md-sys-color-surface-container-low); border-radius: 32px; border: 2px dashed var(--md-sys-color-outline-variant);">
+                    <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.3;">notifications_paused</span>
+                    <p style="margin-top: 12px;">Belum ada pengumuman aktif.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="card slide-up" style="width: 100%; max-width: 500px; background: var(--md-sys-color-surface); border-radius: 32px; padding: 32px; box-shadow: var(--elevation-5);">
+        <h3 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+            <span class="material-symbols-outlined">edit_note</span>
+            Edit Pengumuman
+        </h3>
+        <form id="editForm" method="POST">
+            <div class="mb-3">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Judul</label>
+                <input type="text" name="title" id="editTitle" required style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant); padding: 0 16px; background: var(--md-sys-color-surface-container-low);">
+            </div>
+            <div class="mb-3">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Kategori</label>
+                <select name="category" id="editCategory" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant); padding: 0 16px; background: var(--md-sys-color-surface-container-low);">
+                    <option value="Umum">Umum</option>
+                    <option value="Latihan">Latihan</option>
+                    <option value="Upacara">Upacara</option>
+                    <option value="Rapat">Rapat</option>
+                    <option value="Informasi Sekolah">Informasi Sekolah</option>
+                    <option value="Pemberitahuan Penting">Pemberitahuan Penting</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Isi</label>
+                <textarea name="content" id="editContent" required style="width: 100%; min-height: 150px; border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant); padding: 12px; background: var(--md-sys-color-surface-container-low); font-family: inherit;"></textarea>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding: 12px; background: var(--md-sys-color-surface-container-high); border-radius: 16px;">
+                <input type="checkbox" name="is_pinned" id="editPinned" style="width: 20px; height: 20px;">
+                <label for="editPinned" style="font-size: 0.875rem; font-weight: 600; cursor: pointer;">Sematkan di Atas</label>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button type="submit" class="btn btn-primary" style="flex: 2; height: 52px; border-radius: 16px;">
+                    <span class="material-symbols-outlined">save</span>
+                    Simpan
+                </button>
+                <button type="button" onclick="closeEditModal()" class="btn btn-tonal" style="flex: 1; height: 52px; border-radius: 16px;">Batal</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openEditModal(ann) {
+        document.getElementById('editForm').action = "/admin/announcements/edit/" + ann.id;
+        document.getElementById('editTitle').value = ann.title;
+        document.getElementById('editCategory').value = ann.category;
+        document.getElementById('editContent').value = ann.content;
+        document.getElementById('editPinned').checked = ann.is_pinned === 1;
+        document.getElementById('editModal').style.display = 'flex';
+    }
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('editModal')) {
+            closeEditModal();
+        }
+    }
+</script>
+{% endblock %}

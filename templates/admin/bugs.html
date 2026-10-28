@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Laporan Bug{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <div style="margin-bottom: 32px;">
+        <h1 style="margin: 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em;">Manajemen Bug</h1>
+        <p style="color: var(--md-sys-color-outline); margin-top: 4px; font-weight: 500;">Pantau dan selesaikan masalah teknis yang dilaporkan.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% if bugs %}
+            {% for b in bugs %}
+            <div class="card" style="background: var(--md-sys-color-surface); border-radius: 24px; padding: 24px; border: 1px solid var(--md-sys-color-outline-variant);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div>
+                        <div style="font-weight: 800; font-size: 1.1rem;">{{ b.title }}</div>
+                        <div style="font-size: 0.75rem; color: var(--md-sys-color-outline); font-weight: 600;">Dilaporkan oleh {{ b.reporter_name }} • {{ b.created_at[:16] }}</div>
+                    </div>
+                    <span style="padding: 6px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; background: {% if b.status == 'open' %}var(--md-sys-color-error-container){% elif b.status == 'Resolved' %}#E8F5E9{% else %}var(--md-sys-color-surface-container-high){% endif %}; color: {% if b.status == 'open' %}var(--md-sys-color-on-error-container){% elif b.status == 'Resolved' %}#2E7D32{% else %}var(--md-sys-color-on-surface-variant){% endif %};">
+                        {{ b.status }}
+                    </span>
+                </div>
+
+                <p style="margin: 0 0 20px 0; font-size: 1rem; line-height: 1.5; color: var(--md-sys-color-on-surface);">{{ b.description }}</p>
+
+                {% if b.status == 'open' %}
+                <div style="border-top: 1px solid var(--md-sys-color-surface-variant); padding-top: 20px;">
+                    <form action="{{ url_for('admin.resolve_bug', id=b.id) }}" method="POST">
+                        <button type="submit" class="btn btn-primary" style="height: 44px; padding: 0 20px; border-radius: 10px; font-size: 0.9rem;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">check_circle</span>
+                            <span>Tandai Selesai (Resolve)</span>
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+                <form action="{{ url_for('admin.delete_bug', id=b.id) }}" method="POST" style="display: flex; justify-content: flex-end;" onsubmit="return confirm('Hapus laporan kendala ini secara permanen?')">
+                    <button type="submit" class="btn btn-tonal" style="color: var(--md-sys-color-error);">
+                        <span class="material-symbols-outlined">delete</span> Hapus laporan
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 64px 24px; border: 2px dashed var(--md-sys-color-outline-variant); border-radius: 28px;">
+                <p style="color: var(--md-sys-color-outline); margin: 0; font-weight: 600;">Tidak ada laporan bug yang aktif.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

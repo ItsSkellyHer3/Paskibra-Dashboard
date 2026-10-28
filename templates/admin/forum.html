@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Moderasi Forum{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <div style="margin-bottom: 32px;">
+        <h1 style="margin: 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em;">Moderasi Forum</h1>
+        <p style="color: var(--md-sys-color-outline); margin-top: 4px; font-weight: 500;">Pantau dan kelola diskusi komunitas.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% if topics %}
+            {% for t in topics %}
+            <div class="card" style="background: var(--md-sys-color-surface); border-radius: 20px; padding: 20px; border: 1px solid var(--md-sys-color-outline-variant);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 16px;">
+                    <div style="min-width: 0;">
+                        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800;">{{ t.title }}</h3>
+                        <div style="font-size: 0.8rem; color: var(--md-sys-color-outline); margin-top: 4px; font-weight: 600;">
+                            Oleh {{ t.author }} • {{ t.created_at[:16] }}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 4px;">
+                        {% if t.is_pinned %}
+                        <span class="material-symbols-outlined" style="font-size: 18px; color: var(--md-sys-color-primary); font-variation-settings: 'FILL' 1;">push_pin</span>
+                        {% endif %}
+                        {% if t.is_closed %}
+                        <span class="material-symbols-outlined" style="font-size: 18px; color: var(--md-sys-color-outline);">lock</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--md-sys-color-surface-variant); padding-top: 16px;">
+                    <a href="{{ url_for('admin.toggle_forum_pin', id=t.id) }}" class="btn btn-icon" style="background: var(--md-sys-color-surface-container-high); width: 40px; height: 40px; {% if t.is_pinned %}color: var(--md-sys-color-primary);{% endif %}" title="Pin Topic">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">push_pin</span>
+                    </a>
+                    <a href="{{ url_for('admin.toggle_forum_close', id=t.id) }}" class="btn btn-icon" style="background: var(--md-sys-color-surface-container-high); width: 40px; height: 40px; {% if t.is_closed %}color: var(--md-sys-color-primary);{% endif %}" title="Lock/Unlock Topic">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">{% if t.is_closed %}lock_open{% else %}lock{% endif %}</span>
+                    </a>
+                    <a href="{{ url_for('dashboard.forum_topic', id=t.id) }}" class="btn btn-icon" style="background: var(--md-sys-color-surface-container-high); width: 40px; height: 40px;" title="View Discussion">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
+                    </a>
+                    <button onclick="if(confirm('Hapus seluruh topik diskusi ini?')) document.getElementById('del-topic-{{ t.id }}').submit()" class="btn btn-icon" style="background: var(--md-sys-color-surface-container-high); width: 40px; height: 40px; color: var(--md-sys-color-error);" title="Delete Topic">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
+                    </button>
+                    <form id="del-topic-{{ t.id }}" action="{{ url_for('admin.delete_forum_topic', id=t.id) }}" method="POST" style="display: none;"></form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 64px 24px; border: 2px dashed var(--md-sys-color-outline-variant); border-radius: 28px;">
+                <p style="color: var(--md-sys-color-outline); margin: 0; font-weight: 600;">Belum ada topik diskusi di forum.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

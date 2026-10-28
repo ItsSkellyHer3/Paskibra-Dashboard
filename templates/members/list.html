@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Daftar Anggota{% endblock %}
+
+{% block head %}
+<style>
+    .search-filter-section {
+        background: var(--md-sys-color-surface-container);
+        padding: clamp(16px, 4vw, 24px);
+        border-radius: 24px;
+        margin-bottom: 24px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .search-bar {
+        background: var(--md-sys-color-surface);
+        border-radius: 14px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        margin-bottom: 20px;
+        height: 56px;
+        box-sizing: border-box;
+    }
+
+    .search-bar input {
+        border: none;
+        outline: none;
+        background: transparent;
+        flex: 1;
+        font-family: inherit;
+        font-size: 1rem;
+        color: var(--md-sys-color-on-surface);
+        width: 100%;
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .filter-group::-webkit-scrollbar { display: none; }
+
+    .chip-filter {
+        padding: 8px 16px;
+        border-radius: 12px;
+        background: var(--md-sys-color-surface);
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .chip-filter.active {
+        background: var(--md-sys-color-primary);
+        color: white;
+        border-color: var(--md-sys-color-primary);
+    }
+
+    .member-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        width: 100%;
+    }
+
+    .member-card-new {
+        background: var(--md-sys-color-surface);
+        border-radius: 24px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    .member-card-new:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--elevation-2);
+        border-color: var(--md-sys-color-primary);
+    }
+
+    .avatar-frame {
+        width: 64px;
+        height: 64px;
+        border-radius: 20px;
+        background: var(--md-sys-color-surface-container-high);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--md-sys-color-outline);
+        flex-shrink: 0;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .status-dot {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 3px solid var(--md-sys-color-surface);
+        background: #bdbdbd;
+    }
+
+    .status-dot.online { background: #4caf50; }
+
+    .member-meta {
+        min-width: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .m-name {
+        display: block;
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: var(--md-sys-color-on-surface);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .m-activity {
+        font-size: 0.75rem;
+        color: var(--md-sys-color-primary);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .status-bubble {
+        margin-top: 8px;
+        padding: 6px 12px;
+        background: var(--md-sys-color-surface-container-low);
+        border-radius: 12px;
+        font-size: 0.8rem;
+        color: var(--md-sys-color-on-surface-variant);
+        font-style: italic;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <div style="margin-bottom: 32px;">
+        <h1 style="margin: 0; font-size: clamp(1.5rem, 5vw, 2.25rem); font-weight: 800; letter-spacing: -0.02em;">Daftar Anggota</h1>
+        <p style="color: var(--md-sys-color-outline); margin-top: 4px; font-weight: 500;">Pantau aktivitas dan status rekan-rekan Paskibra.</p>
+    </div>
+
+    <div class="search-filter-section">
+        <div class="search-bar">
+            <span class="material-symbols-outlined" style="color: var(--md-sys-color-outline);">search</span>
+            <input type="text" id="mSearch" placeholder="Cari nama atau kelas...">
+        </div>
+
+        <div class="filter-group">
+            <div class="chip-filter active" data-filter="all">Semua</div>
+            {% for role in roles %}
+            <div class="chip-filter" data-filter="role:{{ role }}">{{ role }}</div>
+            {% endfor %}
+            {% for c in classes %}
+            <div class="chip-filter" data-filter="class:{{ c }}">Kelas {{ c }}</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="member-grid" id="mGrid">
+        {% for m in members %}
+        <a href="{{ url_for('profile.view_user', user_id=m.id) }}" class="member-card-new" data-name="{{ m.full_name|lower }}" data-class="{{ m.class|lower }}" data-role="{{ m.role }}" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
+                <div class="avatar-frame">
+                    {% if m.avatar and m.avatar != 'default_avatar.png' %}
+                        <img src="{{ url_for('media_avatar', filename=m.avatar) }}" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" alt="">
+                    {% else %}
+                        <span class="material-symbols-outlined" style="font-size: 28px;">person</span>
+                    {% endif %}
+                    <div class="status-dot {% if m.is_online %}online{% endif %}"></div>
+                </div>
+                <div class="member-meta">
+                    <span class="m-name">{{ m.full_name }}</span>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span class="m-role-badge">{{ m.role }}</span>
+                        <span style="font-size: 0.75rem; color: var(--md-sys-color-outline); font-weight: 600;">Kelas {{ m.class }}</span>
+                    </div>
+                    {% if m.is_online %}
+                        <div class="m-activity">
+                            <span class="material-symbols-outlined" style="font-size: 14px;">visibility</span>
+                            {{ m.current_activity or 'Aktif' }}
+                        </div>
+                    {% else %}
+                        <div style="font-size: 0.75rem; color: var(--md-sys-color-outline); font-weight: 500;">
+                            Offline
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if m.status_message %}
+            <div class="status-bubble">
+                "{{ m.status_message }}"
+            </div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    const mInput = document.getElementById('mSearch');
+    const mCards = document.querySelectorAll('.member-card-new');
+    const fChips = document.querySelectorAll('.chip-filter');
+
+    let activeFilter = 'all';
+    let query = '';
+
+    function updateDisplay() {
+        mCards.forEach(card => {
+            const name = card.dataset.name;
+            const mClass = card.dataset.class;
+            const role = card.dataset.role;
+            
+            let matchesF = true;
+            if (activeFilter !== 'all') {
+                if (activeFilter.startsWith('role:')) {
+                    matchesF = (role === activeFilter.replace('role:', ''));
+                } else if (activeFilter.startsWith('class:')) {
+                    matchesF = (mClass === activeFilter.replace('class:', '').toLowerCase());
+                }
+            }
+
+            const matchesS = name.includes(query) || mClass.includes(query);
+
+            card.style.display = (matchesF && matchesS) ? 'flex' : 'none';
+        });
+    }
+
+    mInput.addEventListener('input', (e) => {
+        query = e.target.value.toLowerCase();
+        updateDisplay();
+    });
+
+    fChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            fChips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            activeFilter = chip.dataset.filter;
+            updateDisplay();
+        });
+    });
+</script>
+{% endblock %}

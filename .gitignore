@@ -1,0 +1,28 @@
+# Python environments and generated files
+.venv/
+venv/
+vrnv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+instance/vapid_private.pem
+
+# Production data and user uploads
+paskibra_v2.db
+paskibra_v2.db-*
+static/uploads/**
+!static/uploads/.gitkeep
+
+# Device audit captures can contain personal/device information
+device-optimization-audit/
+
+# Editor and OS files
+.DS_Store
+*.swp
+*.swo

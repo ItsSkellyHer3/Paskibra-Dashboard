@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Detail Anggota{% endblock %}
+
+{% block head %}
+<style>
+    .detail-page {
+        max-width: 760px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .profile-header {
+        background: var(--md-sys-color-surface-container-lowest);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        border-radius: 18px;
+        padding: clamp(18px, 4vw, 28px);
+        text-align: center;
+        position: relative;
+    }
+
+    .profile-avatar {
+        width: 92px;
+        height: 92px;
+        border-radius: 22px;
+        margin: 0 auto 16px;
+        overflow: hidden;
+        background: var(--md-sys-color-surface-variant);
+        border: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-avatar .material-symbols-outlined { font-size: 80px; color: var(--md-sys-color-outline); margin-top: 20px; }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .stat-box {
+        background: var(--md-sys-color-surface-container);
+        padding: 12px 6px;
+        border-radius: 12px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .stat-box .count { font-size: 1.25rem; font-weight: 800; display: block; }
+    .stat-box .label { font-size: 0.65rem; font-weight: 700; color: var(--md-sys-color-outline); text-transform: uppercase; }
+
+    .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .history-item {
+        background: var(--md-sys-color-surface-container-low);
+        padding: 14px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .history-date { font-weight: 600; font-size: 0.95rem; }
+    .history-time { font-size: 0.8rem; color: var(--md-sys-color-outline); }
+
+    .badge {
+        padding: 4px 12px;
+        border-radius: var(--radius-full);
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .badge-hadir { background: #E8F5E9; color: #1B5E20; }
+    .badge-izin { background: #FFF3E0; color: #E65100; }
+    .badge-sakit { background: #E3F2FD; color: #0D47A1; }
+    .badge-alpha { background: #FFEBEE; color: #B71C1C; }
+
+    .admin-controls { background: var(--md-sys-color-surface-container-lowest); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 16px; padding: 18px; }
+    .attendance-detail-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    @media (max-width: 480px) {
+        .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .attendance-detail-actions { grid-template-columns: 1fr; }
+        .history-item { gap: 10px; }
+    }
+    body.dark-theme .badge-hadir { background: #24412d; color: #b9e9c4; }
+    body.dark-theme .badge-izin { background: #4d341d; color: #ffd3a2; }
+    body.dark-theme .badge-sakit { background: #1e344b; color: #bedcff; }
+    body.dark-theme .badge-alpha { background: #4a2427; color: #ffc1c3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-page fade-in">
+    <div style="margin-bottom: 12px;">
+        <a href="{{ url_for('attendance.index') }}" class="btn btn-tonal" style="padding: 0 16px; height: 48px;">
+            <span class="material-symbols-outlined">arrow_back</span>
+            <span>Kembali</span>
+        </a>
+    </div>
+
+    <div class="profile-header">
+        <div class="profile-avatar">
+            {% if member.avatar and member.avatar != 'default_avatar.png' %}
+                <img src="{{ url_for('media_avatar', filename=member.avatar) }}" alt="">
+            {% else %}
+                <span class="material-symbols-outlined">person</span>
+            {% endif %}
+        </div>
+        <h1 style="margin: 0; font-size: 1.5rem; font-weight: 800;">{{ member.full_name }}</h1>
+        <p style="margin: 4px 0 0; color: var(--md-sys-color-outline); font-weight: 500;">{{ member.class }} • {{ member.role }}</p>
+
+        <div class="stats-row">
+            <div class="stat-box">
+                <span class="count" style="color: #2E7D32;">{{ stats.hadir }}</span>
+                <span class="label">Hadir</span>
+            </div>
+            <div class="stat-box">
+                <span class="count" style="color: #E65100;">{{ stats.izin }}</span>
+                <span class="label">Izin</span>
+            </div>
+            <div class="stat-box">
+                <span class="count" style="color: #1565C0;">{{ stats.sakit }}</span>
+                <span class="label">Sakit</span>
+            </div>
+            <div class="stat-box">
+                <span class="count" style="color: #C62828;">{{ stats.alpha }}</span>
+                <span class="label">Alpha</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin: 0 0 20px 0; font-size: 1.1rem; font-weight: 700;">Riwayat Presensi</h3>
+        <div class="history-list">
+            {% for entry in history %}
+            <div class="history-item">
+                <div>
+                    <div class="history-date">{{ entry.scan_time[:10] }}</div>
+                    <div class="history-time">{{ entry.scan_time[11:16] }}</div>
+                </div>
+                <div class="badge badge-{{ entry.status.lower() }}">
+                    {{ entry.status }}
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 24px; color: var(--md-sys-color-outline);">
+                <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.3;">history</span>
+                <p>Belum ada riwayat presensi.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="admin-controls">
+        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Update Status Hari Ini</h3>
+        <div class="attendance-detail-actions">
+            <form action="{{ url_for('attendance.mark') }}" method="POST">
+                <input type="hidden" name="user_id" value="{{ member.id }}">
+                <input type="hidden" name="status" value="Hadir">
+                <button type="submit" class="btn btn-tonal" style="width: 100%; background: #E8F5E9; color: #1B5E20;">Hadir</button>
+            </form>
+            <form action="{{ url_for('attendance.mark') }}" method="POST">
+                <input type="hidden" name="user_id" value="{{ member.id }}">
+                <input type="hidden" name="status" value="Izin">
+                <button type="submit" class="btn btn-tonal" style="width: 100%; background: #FFF3E0; color: #E65100;">Izin</button>
+            </form>
+            <form action="{{ url_for('attendance.mark') }}" method="POST">
+                <input type="hidden" name="user_id" value="{{ member.id }}">
+                <input type="hidden" name="status" value="Sakit">
+                <button type="submit" class="btn btn-tonal" style="width: 100%; background: #E3F2FD; color: #0D47A1;">Sakit</button>
+            </form>
+            <form action="{{ url_for('attendance.mark') }}" method="POST">
+                <input type="hidden" name="user_id" value="{{ member.id }}">
+                <input type="hidden" name="status" value="Alpha">
+                <button type="submit" class="btn btn-tonal" style="width: 100%; background: #FFEBEE; color: #B71C1C;">Alpha</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

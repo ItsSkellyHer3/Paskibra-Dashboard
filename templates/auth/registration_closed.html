@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Pendaftaran Ditutup{% endblock %}
+
+{% block head %}
+<style>
+    .registration-closed { display:grid; min-height:calc(100svh - 80px); place-items:center; padding:28px 16px; }
+    .registration-closed__card { width:min(100%, 520px); padding:clamp(24px, 5vw, 40px); border:1px solid var(--md-sys-color-outline-variant); border-radius:24px; background:var(--md-sys-color-surface-container-lowest); text-align:center; box-shadow:var(--elevation-2); }
+    .registration-closed__icon { display:grid; width:64px; height:64px; margin:0 auto 20px; place-items:center; border-radius:20px; color:var(--md-sys-color-on-secondary-container); background:var(--md-sys-color-secondary-container); }
+    .registration-closed__icon .material-symbols-outlined { font-size:32px; }
+    .registration-closed h1 { margin:0; font-size:clamp(1.5rem, 5vw, 2rem); font-weight:700; letter-spacing:-.035em; }
+    .registration-closed__reason { margin:14px 0 24px; color:var(--md-sys-color-on-surface-variant); line-height:1.7; white-space:pre-line; }
+    .registration-closed__actions { display:flex; justify-content:center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="registration-closed">
+    <section class="registration-closed__card" aria-labelledby="registration-closed-title">
+        <div class="registration-closed__icon" aria-hidden="true"><span class="material-symbols-outlined">event_busy</span></div>
+        <h1 id="registration-closed-title">Pendaftaran Ditutup Sementara</h1>
+        <p class="registration-closed__reason">{{ reason }}</p>
+        <div class="registration-closed__actions">
+            <a class="btn btn-primary" href="{{ url_for('auth.login') }}">
+                <span class="material-symbols-outlined" aria-hidden="true">login</span>
+                <span>Kembali ke halaman masuk</span>
+            </a>
+        </div>
+    </section>
+</main>
+{% endblock %}

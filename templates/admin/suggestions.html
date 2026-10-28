@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Kelola Saran{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <div style="margin-bottom: 32px;">
+        <h1 style="margin: 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em;">Manajemen Saran</h1>
+        <p style="color: var(--md-sys-color-outline); margin-top: 4px; font-weight: 500;">Review dan tanggapi masukan dari anggota.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% if suggestions %}
+            {% for s in suggestions %}
+            <div class="card" style="background: var(--md-sys-color-surface); border-radius: 24px; padding: 24px; border: 1px solid var(--md-sys-color-outline-variant);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                    <div>
+                        <div style="font-weight: 800; font-size: 1.1rem;">{{ s.author }}</div>
+                        <div style="font-size: 0.75rem; color: var(--md-sys-color-outline); font-weight: 600;">{{ s.created_at[:16] }}</div>
+                    </div>
+                    <span style="padding: 6px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; background: {% if s.status == 'pending' %}var(--md-sys-color-surface-container-high){% elif s.status == 'resolved' %}#E8F5E9{% else %}var(--md-sys-color-primary-container){% endif %}; color: {% if s.status == 'pending' %}var(--md-sys-color-on-surface-variant){% elif s.status == 'resolved' %}#2E7D32{% else %}var(--md-sys-color-on-primary-container){% endif %};">
+                        {{ s.status }}
+                    </span>
+                </div>
+
+                <p style="margin: 0 0 20px 0; font-size: 1rem; line-height: 1.5; color: var(--md-sys-color-on-surface);">{{ s.content }}</p>
+
+                <div style="border-top: 1px solid var(--md-sys-color-surface-variant); padding-top: 20px;">
+                    <form action="{{ url_for('admin.reply_suggestion', id=s.id) }}" method="POST">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 800; margin-bottom: 8px; color: var(--md-sys-color-primary); text-transform: uppercase;">Berikan Tanggapan</label>
+                        <textarea name="admin_reply" placeholder="Tulis jawaban atau langkah yang akan diambil..." style="width: 100%; min-height: 80px; padding: 12px; border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 0.9rem; resize: vertical; margin-bottom: 12px; box-sizing: border-box;">{{ s.admin_reply or '' }}</textarea>
+                        
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <select name="status" style="height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 0.85rem; font-weight: 600;">
+                                <option value="pending" {% if s.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="reviewed" {% if s.status == 'reviewed' %}selected{% endif %}>Reviewed</option>
+                                <option value="resolved" {% if s.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                            </select>
+                            <button type="submit" class="btn btn-primary" style="height: 40px; padding: 0 16px; border-radius: 10px; font-size: 0.85rem;">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">save</span>
+                                <span>Simpan</span>
+                            </button>
+                            <button type="button" onclick="if(confirm('Hapus saran ini?')) document.getElementById('delete-s-{{ s.id }}').submit()" class="btn btn-tonal" style="height: 40px; padding: 0 16px; border-radius: 10px; font-size: 0.85rem; color: var(--md-sys-color-error);">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                            </button>
+                        </div>
+                    </form>
+                    <form id="delete-s-{{ s.id }}" action="{{ url_for('admin.delete_suggestion', id=s.id) }}" method="POST" style="display: none;"></form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 64px 24px; border: 2px dashed var(--md-sys-color-outline-variant); border-radius: 28px;">
+                <p style="color: var(--md-sys-color-outline); margin: 0; font-weight: 600;">Belum ada saran masuk dari anggota.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

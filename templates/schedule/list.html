@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Jadwal Kegiatan{% endblock %}
+
+{% block head %}
+<style>
+    .schedule-container { max-width: 900px; margin: 0 auto; }
+    
+    .filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 32px;
+        align-items: center;
+    }
+    
+    .search-box {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .search-box input {
+        width: 100%;
+        height: 48px;
+        border-radius: 24px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        padding: 0 16px 0 48px;
+        background: var(--md-sys-color-surface-container-low);
+    }
+    
+    .search-box .material-symbols-outlined {
+        position: absolute;
+        left: 16px;
+        top: 12px;
+        color: var(--md-sys-color-outline);
+    }
+    
+    .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .chip {
+        padding: 8px 20px;
+        border-radius: 100px;
+        background: var(--md-sys-color-surface);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+        text-decoration: none;
+        color: var(--md-sys-color-on-surface);
+        transition: all 0.2s;
+    }
+    .chip.active {
+        background: var(--md-sys-color-primary);
+        color: white;
+        border-color: var(--md-sys-color-primary);
+    }
+
+    .timeline { position: relative; padding-left: 32px; }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 7px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--md-sys-color-outline-variant);
+        opacity: 0.5;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 32px;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -32px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--md-sys-color-surface);
+        border: 3px solid var(--md-sys-color-primary);
+        z-index: 2;
+        top: 6px;
+    }
+
+    .timeline-item.important .timeline-dot {
+        background: var(--md-sys-color-error);
+        border-color: var(--md-sys-color-error);
+        box-shadow: 0 0 0 4px var(--md-sys-color-error-container);
+    }
+
+    .schedule-card {
+        background: var(--md-sys-color-surface);
+        border-radius: 28px;
+        padding: 24px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .schedule-card:hover { transform: translateY(-2px); box-shadow: var(--elevation-2); }
+    
+    .important-highlight {
+        border-left: 8px solid var(--md-sys-color-error);
+        background: linear-gradient(to right, rgba(186, 26, 26, 0.05), transparent);
+    }
+
+    .date-header {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: var(--md-sys-color-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-badge {
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 4px 12px;
+        border-radius: 100px;
+        text-transform: uppercase;
+    }
+    .status-upcoming { background: #E3F2FD; color: #0D47A1; }
+    .status-completed { background: #E8F5E9; color: #1B5E20; }
+    .status-postponed { background: #FFF3E0; color: #E65100; }
+    .status-cancelled { background: #FFEBEE; color: #B71C1C; }
+
+    .category-tag {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--md-sys-color-outline);
+        background: var(--md-sys-color-surface-container-high);
+        padding: 4px 10px;
+        border-radius: 8px;
+    }
+
+    .meta-info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--md-sys-color-outline-variant);
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.9rem;
+    }
+    
+    .meta-item { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+    .meta-item .material-symbols-outlined { font-size: 18px; color: var(--md-sys-color-primary); }
+
+    .admin-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="schedule-container slide-up">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h1 style="font-weight: 800; font-size: 2.25rem; margin: 0;">Agenda Kegiatan</h1>
+            <p style="color: var(--md-sys-color-on-surface-variant); margin-top: 8px;">Jadwal latihan dan kegiatan resmi Paskibra.</p>
+        </div>
+        {% if session.get('role') in ['Owner', 'Admin', 'Super Admin', 'Moderator'] %}
+        <a href="{{ url_for('schedule.add') }}" class="btn btn-primary btn-large">
+            <span class="material-symbols-outlined">add_task</span>
+            <span>Tambah Jadwal</span>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filter & Search -->
+    <div class="filter-bar">
+        <form action="{{ url_for('schedule.list') }}" method="GET" class="search-box">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" name="q" placeholder="Cari kegiatan..." value="{{ search }}">
+            <input type="hidden" name="filter" value="{{ filter }}">
+        </form>
+        
+        <div class="filter-chips">
+            <a href="{{ url_for('schedule.list', filter='today', q=search) }}" class="chip {% if filter == 'today' %}active{% endif %}">Hari Ini</a>
+            <a href="{{ url_for('schedule.list', filter='week', q=search) }}" class="chip {% if filter == 'week' %}active{% endif %}">Minggu Ini</a>
+            <a href="{{ url_for('schedule.list', filter='month', q=search) }}" class="chip {% if filter == 'month' %}active{% endif %}">Bulan Ini</a>
+            <a href="{{ url_for('schedule.list', filter='upcoming', q=search) }}" class="chip {% if filter == 'upcoming' %}active{% endif %}">Mendatang</a>
+        </div>
+    </div>
+
+    {% if schedules %}
+    <div class="timeline">
+        {% set last_date = None %}
+        {% for s in schedules %}
+            {% if s.date != last_date %}
+                <div style="margin: 40px 0 20px -32px; display: flex; align-items: center; gap: 12px;">
+                    <div style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); padding: 8px 16px; border-radius: 12px; font-weight: 800; font-size: 0.9rem;">
+                        {{ s.formatted_date }}
+                    </div>
+                    <div style="flex: 1; height: 1px; background: var(--md-sys-color-outline-variant); opacity: 0.5;"></div>
+                </div>
+                {% set last_date = s.date %}
+            {% endif %}
+
+            <div class="timeline-item {% if s.is_important %}important{% endif %}">
+                <div class="timeline-dot"></div>
+                <div class="schedule-card {% if s.is_important %}important-highlight{% endif %}">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                <span class="category-tag">{{ s.category }}</span>
+                                <span class="status-badge status-{{ s.status.lower() }}">{{ s.status }}</span>
+                            </div>
+                            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--md-sys-color-on-surface);">{{ s.activity }}</h3>
+                        </div>
+                        {% if s.is_important %}
+                        <span class="material-symbols-outlined" style="color: var(--md-sys-color-error); font-variation-settings: 'FILL' 1;">priority_high</span>
+                        {% endif %}
+                    </div>
+
+                    {% if s.description %}
+                    <p style="margin: 0; font-size: 0.95rem; line-height: 1.5; color: var(--md-sys-color-on-surface-variant);">{{ s.description }}</p>
+                    {% endif %}
+
+                    <div class="meta-info">
+                        <div class="meta-item">
+                            <span class="material-symbols-outlined">schedule</span>
+                            <span>{{ s.time }} WIB</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="material-symbols-outlined">location_on</span>
+                            <span>{{ s.location }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="material-symbols-outlined">calendar_month</span>
+                            <span>{{ s.day_name }}</span>
+                        </div>
+                    </div>
+
+                    {% if session.get('role') in ['Owner', 'Admin', 'Super Admin', 'Moderator'] %}
+                    <div class="admin-actions">
+                        <a href="{{ url_for('schedule.edit', id=s.id) }}" class="btn btn-tonal" style="border-radius: 12px; height: 40px; padding: 0 16px;">
+                            <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
+                            <span>Edit</span>
+                        </a>
+                        <form action="{{ url_for('schedule.delete', id=s.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Hapus jadwal ini?')">
+                            <button type="submit" class="btn btn-icon" style="color: var(--md-sys-color-error); background: var(--md-sys-color-error-container); border-radius: 12px; width: 40px; height: 40px;">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
+                            </button>
+                        </form>
+                        
+                        <div style="margin-left: auto; display: flex; gap: 4px;">
+                            <form action="{{ url_for('schedule.update_status', id=s.id, status='Completed') }}" method="POST">
+                                <button type="submit" class="btn btn-icon" title="Tandai Selesai" style="color: #2E7D32;"><span class="material-symbols-outlined">check_circle</span></button>
+                            </form>
+                            <form action="{{ url_for('schedule.update_status', id=s.id, status='Postponed') }}" method="POST">
+                                <button type="submit" class="btn btn-icon" title="Tunda" style="color: #E65100;"><span class="material-symbols-outlined">event_busy</span></button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 80px 24px; background: var(--md-sys-color-surface-container-lowest); border-radius: 40px; border: 2px dashed var(--md-sys-color-outline-variant);">
+        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.2; margin-bottom: 16px;">calendar_today</span>
+        <h3>Tidak ada jadwal ditemukan</h3>
+        <p style="color: var(--md-sys-color-outline);">Sesuaikan filter atau kata kunci pencarian Anda.</p>
+        <a href="{{ url_for('schedule.list') }}" class="btn btn-text" style="margin-top: 16px;">Reset Filter</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

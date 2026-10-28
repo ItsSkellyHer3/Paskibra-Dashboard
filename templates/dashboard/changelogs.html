@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Pembaruan Aplikasi{% endblock %}
+
+{% block head %}
+<style>
+    .updates-page { max-width: 920px; margin: 0 auto; }
+    .updates-heading { margin: 0 0 24px; }
+    .updates-heading h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 2rem); letter-spacing: -.035em; }
+    .updates-heading p { margin: 8px 0 0; color: var(--md-sys-color-on-surface-variant); }
+    .update-entry { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 16px; padding: 22px; margin-bottom: 14px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 18px; background: var(--md-sys-color-surface-container-lowest); }
+    .update-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; color: var(--md-sys-color-primary); background: var(--md-sys-color-primary-container); }
+    .update-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant); font-size: .82rem; }
+    .update-version { padding: 4px 9px; border-radius: 999px; background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); font-weight: 700; }
+    .update-category { font-weight: 600; }
+    .update-content { white-space: pre-wrap; line-height: 1.65; color: var(--md-sys-color-on-surface); }
+    .updates-empty { padding: 40px 22px; text-align: center; border: 1px dashed var(--md-sys-color-outline-variant); border-radius: 18px; color: var(--md-sys-color-on-surface-variant); }
+    @media (max-width: 480px) { .update-entry { grid-template-columns: 38px minmax(0, 1fr); gap: 12px; padding: 16px; } .update-icon { width: 38px; height: 38px; border-radius: 12px; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="updates-page slide-up" aria-labelledby="updates-title">
+    <header class="updates-heading">
+        <h1 id="updates-title">Pembaruan aplikasi</h1>
+        <p>Catatan fitur baru dan perbaikan portal Paskibra.</p>
+    </header>
+
+    {% for item in changelogs %}
+    <article class="update-entry">
+        <div class="update-icon" aria-hidden="true">
+            {% if item.category == 'Fix' %}
+            <span class="material-symbols-outlined">build</span>
+            {% elif item.category == 'Improvement' %}
+            <span class="material-symbols-outlined">trending_up</span>
+            {% else %}
+            <span class="material-symbols-outlined">auto_awesome</span>
+            {% endif %}
+        </div>
+        <div>
+            <div class="update-meta">
+                <span class="update-version">Versi {{ item.version }}</span>
+                <span class="update-category">{{ item.category }}</span>
+                <time datetime="{{ item.created_at }}">{{ item.created_at }}</time>
+            </div>
+            <div class="update-content">{{ item.content }}</div>
+        </div>
+    </article>
+    {% else %}
+    <div class="updates-empty">
+        <span class="material-symbols-outlined" aria-hidden="true">history</span>
+        <p>Belum ada catatan pembaruan.</p>
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}

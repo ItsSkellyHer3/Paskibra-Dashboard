@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Tambah Agenda{% endblock %}
+
+{% block content %}
+<div class="slide-up" style="max-width: 800px; margin: 0 auto;">
+    <div style="margin-bottom: 32px; text-align: center;">
+        <div style="width: 72px; height: 72px; background: var(--md-sys-color-primary-container); border-radius: 24px; display: inline-flex; align-items: center; justify-content: center; color: var(--md-sys-color-primary); margin-bottom: 16px;">
+            <span class="material-symbols-outlined" style="font-size: 36px;">calendar_add_on</span>
+        </div>
+        <h1 style="font-weight: 800; font-size: 2rem; margin: 0;">Tambah Agenda Baru</h1>
+        <p style="color: var(--md-sys-color-on-surface-variant); margin-top: 8px;">Rencanakan kegiatan resmi Paskibra dengan detail yang jelas.</p>
+    </div>
+
+    <div class="card" style="background: var(--md-sys-color-surface); border-radius: 32px; padding: 32px; border: 1px solid var(--md-sys-color-outline-variant);">
+        <form action="{{ url_for('schedule.add') }}" method="POST">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div style="grid-column: span 2;">
+                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--md-sys-color-on-surface);">Nama Kegiatan / Judul</label>
+                    <input type="text" name="activity" required placeholder="Contoh: Latihan Rutin, Rapat Pengurus..." style="width: 100%; height: 56px; border-radius: 16px; border: 1px solid var(--md-sys-color-outline-variant); padding: 0 20px; background: var(--md-sys-color-surface-container-low); font-size: 1rem;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--md-sys-color-on-surface);">Tanggal</label>
+                    <input type="date" name="date" required style="width: 100%; height: 56px; border-radius: 16px; border: 1px solid var(--md-sys-color-outline-variant); padding: 0 20px; background: var(--md-sys-color-surface-container-low); font-family: inherit;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--md-sys-color-on-surface);">Waktu (WIB)</label>
+                    <input type="time" name="time" required style="width: 100%; height: 56px; border-radius: 16px; border: 1px solid var(--md-sys-color-outline-variant); padding: 0 20px; background: var(--md-sys-color-surface-container-low); font-family: inherit;">
+                </div>
+
+                <div style="grid-column: span 2;">
+                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--md-sys-color-on-surface);">Lokasi Kegiatan</label>
+                    <input type="text" name="location" required placeholder="Contoh: Lapangan Utama, Ruang OSIS..." style="width: 100%; height: 56px; border-radius: 16px; border: 1px solid var(--md-sys-color-outline-variant); padding: 0 20px; background: var(--md-sys-color-surface-container-low);">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--md-sys-color-on-surface);">Kategori</label>
+                    <select name="category" style="width: 100%; height: 56px; border-radius: 16px; border: 1px solid var(--md-sys-color-outline-variant); padding: 0 16px; background: var(--md-sys-color-surface-container-low); font-family: inherit;">
+                        <option value="Latihan">Latihan</option>
+                        <option value="Upacara">Upacara</option>
+                        <option value="Rapat">Rapat</option>
+                        <option value="Lomba">Lomba</option>
+                        <option value="Sekolah">Sekolah</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--md-sys-color-on-surface);">Prioritas</label>
+                    <select name="priority" style="width: 100%; height: 56px; border-radius: 16px; border: 1px solid var(--md-sys-color-outline-variant); padding: 0 16px; background: var(--md-sys-color-surface-container-low); font-family: inherit;">
+                        <option value="Normal">Normal</option>
+                        <option value="Tinggi">Tinggi / Wajib</option>
+                        <option value="Sangat Tinggi">Mendesak</option>
+                    </select>
+                </div>
+
+                <div style="grid-column: span 2;">
+                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--md-sys-color-on-surface);">Deskripsi Tambahan (Opsional)</label>
+                    <textarea name="description" placeholder="Contoh: Menggunakan seragam olahraga, membawa atribut..." style="width: 100%; min-height: 120px; border-radius: 16px; border: 1px solid var(--md-sys-color-outline-variant); padding: 16px; background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 1rem;"></textarea>
+                </div>
+
+                <div style="grid-column: span 2; padding: 16px; background: var(--md-sys-color-surface-container-highest); border-radius: 16px; display: flex; align-items: center; gap: 12px;">
+                    <input type="checkbox" name="is_important" id="is_important" style="width: 24px; height: 24px; accent-color: var(--md-sys-color-error);">
+                    <label for="is_important" style="font-weight: 700; color: var(--md-sys-color-on-surface); cursor: pointer;">Tandai sebagai Agenda Penting (Sorotan)</label>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; display: flex; gap: 16px;">
+                <button type="submit" class="btn btn-primary" style="flex: 2; height: 64px; border-radius: 20px;">
+                    <span class="material-symbols-outlined">save</span>
+                    <span>Terbitkan Agenda</span>
+                </button>
+                <a href="{{ url_for('schedule.list') }}" class="btn btn-tonal" style="flex: 1; height: 64px; border-radius: 20px;">
+                    <span>Batal</span>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

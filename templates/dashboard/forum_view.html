@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Diskusi: {{ topic.title[:20] }}...{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <div style="margin-bottom: 24px;">
+        <a href="{{ url_for('dashboard.forum') }}" class="btn btn-text" style="padding: 0; color: var(--md-sys-color-primary); font-weight: 700;">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Kembali ke Forum
+        </a>
+    </div>
+
+    <!-- Main Topic Card -->
+    <div class="card" style="background: var(--md-sys-color-surface); border-radius: 28px; padding: 24px; border: 1px solid var(--md-sys-color-outline-variant); margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--md-sys-color-surface-container-high); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+                {% if topic.author_avatar and topic.author_avatar != 'default_avatar.png' %}
+                <img src="{{ url_for('media_avatar', filename=topic.author_avatar) }}" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" alt="">
+                {% else %}
+                <span class="material-symbols-outlined" style="color: var(--md-sys-color-outline);">person</span>
+                {% endif %}
+            </div>
+            <div style="min-width: 0;">
+                <div style="font-weight: 800; font-size: 1rem; line-height: 1.2;">{{ topic.author }}</div>
+                <div style="font-size: 0.75rem; color: var(--md-sys-color-primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">{{ topic.author_role }}</div>
+            </div>
+            <div style="margin-left: auto; font-size: 0.75rem; color: var(--md-sys-color-outline);">{{ topic.created_at[:16] }}</div>
+        </div>
+
+        {% if topic.author_id == session.user_id or session.get('role') in ['Owner', 'Admin', 'Super Admin', 'Moderator'] %}
+        <form action="{{ url_for('dashboard.delete_own_forum_topic', id=topic.id) }}" method="POST" style="display: flex; justify-content: flex-end; margin: -4px 0 18px;" onsubmit="return confirm('Hapus topik ini beserta seluruh balasannya?')">
+            <button type="submit" class="btn btn-tonal" style="color: var(--md-sys-color-error);">
+                <span class="material-symbols-outlined">delete</span> Hapus topik
+            </button>
+        </form>
+        {% endif %}
+
+        <h1 style="margin: 0 0 12px; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2;">{{ topic.title }}</h1>
+        <div style="font-size: 1.05rem; line-height: 1.6; color: var(--md-sys-color-on-surface); white-space: pre-wrap;">{{ topic.content | parse_mentions | safe }}</div>
+    </div>
+
+    <div style="margin: 32px 0 16px; padding: 0 4px; display: flex; align-items: center; gap: 8px;">
+        <span class="material-symbols-outlined" style="color: var(--md-sys-color-primary);">forum</span>
+        <h3 style="margin: 0; font-weight: 800;">Balasan ({{ replies|length }})</h3>
+    </div>
+
+    <!-- Replies -->
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 40px;">
+        {% for r in replies %}
+        <div class="card" style="background: var(--md-sys-color-surface-container-lowest); border-radius: 20px; padding: 20px; border: 1px solid var(--md-sys-color-outline-variant);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--md-sys-color-surface-container-high); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+                    {% if r.author_avatar and r.author_avatar != 'default_avatar.png' %}
+                    <img src="{{ url_for('media_avatar', filename=r.author_avatar) }}" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" alt="">
+                    {% else %}
+                    <span class="material-symbols-outlined" style="color: var(--md-sys-color-outline); font-size: 20px;">person</span>
+                    {% endif %}
+                </div>
+                <div style="min-width: 0;">
+                    <div style="font-weight: 700; font-size: 0.95rem;">{{ r.author }}</div>
+                    <div style="font-size: 0.65rem; color: var(--md-sys-color-primary); font-weight: 800; text-transform: uppercase;">{{ r.author_role }}</div>
+                </div>
+                <div style="margin-left: auto; font-size: 0.7rem; color: var(--md-sys-color-outline);">{{ r.created_at[:16] }}</div>
+            </div>
+            <div style="font-size: 1rem; line-height: 1.5; color: var(--md-sys-color-on-surface-variant); white-space: pre-wrap;">{{ r.content | parse_mentions | safe }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Reply Form -->
+    {% if not topic.is_closed %}
+    <div class="card" style="background: var(--md-sys-color-surface); border-radius: 24px; padding: 20px; border: 1px solid var(--md-sys-color-primary); box-shadow: var(--elevation-2);">
+        <form action="{{ url_for('dashboard.forum_topic', id=topic.id) }}" method="POST">
+            <label style="display: block; font-size: 0.8rem; font-weight: 800; margin-bottom: 12px; color: var(--md-sys-color-primary); text-transform: uppercase;">Tulis Balasan</label>
+            <textarea name="content" required placeholder="Berikan tanggapan atau pendapat Anda..." style="width: 100%; min-height: 100px; padding: 12px; border-radius: 14px; border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 1rem; resize: vertical; margin-bottom: 16px; box-sizing: border-box;"></textarea>
+            <button type="submit" class="btn btn-primary" style="width: 100%; height: 48px; border-radius: 12px;">
+                <span class="material-symbols-outlined">reply</span>
+                <span>Kirim Balasan</span>
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 24px; background: var(--md-sys-color-surface-container-high); border-radius: 20px; color: var(--md-sys-color-outline); font-weight: 700;">
+        <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 8px;">lock</span>
+        Diskusi ini telah ditutup oleh administrator.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

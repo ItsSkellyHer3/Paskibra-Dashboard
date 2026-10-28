@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Rekap Absensi{% endblock %}
+
+{% block head %}
+<style>
+    .attendance-dashboard { max-width:1280px; margin:0 auto; display:grid; gap:20px; }
+    .attendance-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+    .attendance-heading h1 { margin:0; font-size:clamp(1.6rem,3vw,2.2rem); letter-spacing:-.04em; }
+    .attendance-heading p { margin:6px 0 0; color:var(--md-sys-color-on-surface-variant); }
+    .attendance-actions { display:flex; gap:9px; align-items:center; flex-wrap:wrap; }
+    .attendance-actions .btn { min-height:42px; border-radius:11px; }
+    .attendance-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .attendance-kpi { min-width:0; padding:17px; border:1px solid var(--md-sys-color-outline-variant); border-radius:15px; background:var(--md-sys-color-surface); }
+    .kpi-top { display:flex; justify-content:space-between; align-items:center; gap:8px; color:var(--md-sys-color-on-surface-variant); font-size:.82rem; font-weight:600; }
+    .kpi-icon { width:34px; height:34px; display:grid; place-items:center; border-radius:10px; background:var(--md-sys-color-surface-container-high); color:var(--md-sys-color-primary); }
+    .kpi-value { margin-top:13px; font-size:clamp(1.55rem,3vw,2rem); font-weight:750; line-height:1; letter-spacing:-.04em; }
+    .kpi-note { margin-top:6px; color:var(--md-sys-color-outline); font-size:.76rem; }
+    .attendance-insights { display:grid; grid-template-columns:minmax(260px,.82fr) minmax(400px,1.5fr); gap:14px; }
+    .insight-card { min-width:0; padding:20px; border:1px solid var(--md-sys-color-outline-variant); border-radius:16px; background:var(--md-sys-color-surface); }
+    .insight-title { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+    .insight-title h2 { margin:0; font-size:1rem; letter-spacing:-.02em; }
+    .insight-title p { margin:5px 0 0; color:var(--md-sys-color-outline); font-size:.8rem; }
+    .donut-layout { display:grid; grid-template-columns:180px minmax(0,1fr); align-items:center; gap:16px; margin-top:18px; }
+    .donut-chart { position:relative; width:min(180px,100%); aspect-ratio:1; border-radius:50%; background:var(--md-sys-color-surface-container-high); }
+    .donut-chart::after { content:""; position:absolute; inset:25%; border-radius:50%; background:var(--md-sys-color-surface); }
+    .donut-center { position:absolute; inset:0; z-index:1; display:grid; align-content:center; justify-items:center; pointer-events:none; }
+    .donut-center strong { font-size:1.55rem; letter-spacing:-.04em; }
+    .donut-center span { color:var(--md-sys-color-outline); font-size:.7rem; }
+    .donut-legend { display:grid; gap:10px; }
+    .legend-row { display:flex; justify-content:space-between; align-items:center; gap:10px; color:var(--md-sys-color-on-surface-variant); font-size:.82rem; }
+    .legend-label { display:flex; align-items:center; gap:8px; min-width:0; }
+    .legend-dot { width:9px; height:9px; flex:0 0 9px; border-radius:50%; }
+    .legend-row b { color:var(--md-sys-color-on-surface); }
+    .trend-chart { display:block; width:100%; height:220px; margin-top:18px; overflow:visible; }
+    .trend-gridline { stroke:var(--md-sys-color-outline-variant); stroke-width:1; stroke-dasharray:3 5; }
+    .trend-axis-label { fill:var(--md-sys-color-outline); font:11px Inter, sans-serif; }
+    .trend-bar { fill:var(--md-sys-color-primary); opacity:.86; transition:opacity .18s ease; }
+    .trend-bar:hover { opacity:1; }
+    .trend-value { fill:var(--md-sys-color-on-surface); font:600 11px Inter, sans-serif; }
+    .records-card { padding:0; overflow:hidden; border:1px solid var(--md-sys-color-outline-variant); border-radius:16px; background:var(--md-sys-color-surface); }
+    .records-header { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:18px 20px; border-bottom:1px solid var(--md-sys-color-outline-variant); }
+    .records-header h2 { margin:0; font-size:1rem; }
+    .records-header p { margin:4px 0 0; color:var(--md-sys-color-outline); font-size:.78rem; }
+    .record-filters { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .record-filters input,.record-filters select,.record-search { min-height:38px; padding:0 10px; border:1px solid var(--md-sys-color-outline-variant); border-radius:9px; background:var(--md-sys-color-surface); color:var(--md-sys-color-on-surface); font:inherit; font-size:.78rem; }
+    .record-search { width:190px; }
+    .records-scroll { overflow:auto; }
+    .records-table { width:100%; border-collapse:collapse; min-width:700px; }
+    .records-table th { padding:12px 16px; background:var(--md-sys-color-surface-container-low); color:var(--md-sys-color-outline); text-align:left; text-transform:uppercase; letter-spacing:.06em; font-size:.67rem; }
+    .records-table td { padding:13px 16px; border-top:1px solid var(--md-sys-color-outline-variant); vertical-align:middle; font-size:.84rem; }
+    .records-table tbody tr:hover { background:var(--md-sys-color-surface-container-low); }
+    .member-cell b { display:block; }
+    .member-cell span,.date-cell span { display:block; margin-top:3px; color:var(--md-sys-color-outline); font-size:.74rem; }
+    .status-chip { display:inline-flex; padding:5px 9px; border-radius:8px; font-size:.69rem; font-weight:750; }
+    .status-hadir { background:#e8f5e9; color:#26733a; }
+    .status-izin { background:#fff3e0; color:#a95a00; }
+    .status-sakit { background:#e3f2fd; color:#1565a8; }
+    .status-alpha { background:#ffebee; color:#b3261e; }
+    .row-actions { display:flex; justify-content:flex-end; gap:3px; }
+    .row-actions .btn-icon { width:32px; height:32px; min-width:32px; }
+    .records-empty { padding:40px 16px; text-align:center; color:var(--md-sys-color-outline); }
+    @media(max-width:1200px) {
+        .attendance-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        .attendance-insights { grid-template-columns:1fr; }
+    }
+    @media(max-width:600px) {
+        .attendance-heading { align-items:stretch; }
+        .attendance-actions { width:100%; }
+        .attendance-actions .btn { flex:1; justify-content:center; }
+        .attendance-kpi { padding:14px; }
+        .kpi-top { font-size:.75rem; }
+        .insight-card { padding:16px; }
+        .donut-layout { grid-template-columns:145px minmax(0,1fr); gap:12px; }
+        .donut-chart { width:145px; }
+        .records-header { align-items:stretch; }
+        .record-filters { display:grid; grid-template-columns:1fr 1fr; }
+        .record-filters > * { min-width:0; width:100%; }
+        .record-search { width:auto; grid-column:1/-1; }
+        .record-filters .btn { grid-column:1/-1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="attendance-dashboard fade-in">
+    <header class="attendance-heading">
+        <div>
+            <h1>Rekap absensi</h1>
+            <p>Ringkasan presensi hari ini dan catatan anggota selama 14 hari terakhir.</p>
+        </div>
+        <div class="attendance-actions">
+            <a href="{{ url_for('attendance.scanner') }}" class="btn btn-primary"><span class="material-symbols-outlined">qr_code_scanner</span> Buka pemindai</a>
+            <form action="{{ url_for('admin.reset_today_attendance') }}" method="POST" onsubmit="return confirm('Hapus seluruh catatan absensi hari ini secara permanen?')">
+                <button type="submit" class="btn btn-tonal" style="color:var(--md-sys-color-error)"><span class="material-symbols-outlined">restart_alt</span> Reset hari ini</button>
+            </form>
+        </div>
+    </header>
+
+    <section class="attendance-kpis" aria-label="Statistik absensi">
+        <article class="attendance-kpi"><div class="kpi-top"><span>Anggota aktif</span><span class="kpi-icon"><span class="material-symbols-outlined">groups</span></span></div><div class="kpi-value">{{ active_members }}</div><div class="kpi-note">Akun aktif di sistem</div></article>
+        <article class="attendance-kpi"><div class="kpi-top"><span>Hadir hari ini</span><span class="kpi-icon" style="color:#287d42"><span class="material-symbols-outlined">check_circle</span></span></div><div class="kpi-value">{{ today_counts['Hadir'] }}</div><div class="kpi-note">{{ present_rate }}% dari anggota aktif</div></article>
+        <article class="attendance-kpi"><div class="kpi-top"><span>Izin & sakit</span><span class="kpi-icon" style="color:#a96500"><span class="material-symbols-outlined">event_busy</span></span></div><div class="kpi-value">{{ today_counts['Izin'] + today_counts['Sakit'] }}</div><div class="kpi-note">{{ today_counts['Izin'] }} izin · {{ today_counts['Sakit'] }} sakit</div></article>
+        <article class="attendance-kpi"><div class="kpi-top"><span>Catatan periode</span><span class="kpi-icon"><span class="material-symbols-outlined">summarize</span></span></div><div class="kpi-value">{{ period_total }}</div><div class="kpi-note">{{ date_from }} sampai {{ date_to }}</div></article>
+    </section>
+
+    <section class="attendance-insights">
+        <article class="insight-card">
+            <div class="insight-title"><div><h2>Distribusi hari ini</h2><p>Status terbaru dari {{ active_members }} anggota aktif</p></div><span class="material-symbols-outlined" style="color:var(--md-sys-color-outline)">donut_small</span></div>
+            <div class="donut-layout">
+                <div class="donut-chart" id="attendance-donut" data-values="{{ today_counts['Hadir'] }},{{ today_counts['Izin'] }},{{ today_counts['Sakit'] }},{{ today_counts['Alpha'] }},{{ today_counts['belum'] }}" role="img" aria-label="Grafik status absensi hari ini">
+                    <div class="donut-center"><strong id="donut-total">0</strong><span>tercatat</span></div>
+                </div>
+                <div class="donut-legend">
+                    <div class="legend-row"><span class="legend-label"><i class="legend-dot" style="background:#35824c"></i>Hadir</span><b>{{ today_counts['Hadir'] }}</b></div>
+                    <div class="legend-row"><span class="legend-label"><i class="legend-dot" style="background:#d99725"></i>Izin</span><b>{{ today_counts['Izin'] }}</b></div>
+                    <div class="legend-row"><span class="legend-label"><i class="legend-dot" style="background:#4388c5"></i>Sakit</span><b>{{ today_counts['Sakit'] }}</b></div>
+                    <div class="legend-row"><span class="legend-label"><i class="legend-dot" style="background:#c94c4c"></i>Alpha</span><b>{{ today_counts['Alpha'] }}</b></div>
+                    <div class="legend-row"><span class="legend-label"><i class="legend-dot" style="background:var(--md-sys-color-outline-variant)"></i>Belum absen</span><b>{{ today_counts['belum'] }}</b></div>
+                </div>
+            </div>
+        </article>
+        <article class="insight-card">
+            <div class="insight-title"><div><h2>Presensi per hari</h2><p>{{ trend_sum }} presensi anggota dalam 14 hari</p></div><span class="material-symbols-outlined" style="color:var(--md-sys-color-outline)">bar_chart</span></div>
+            <svg class="trend-chart" id="attendance-trend" viewBox="0 0 760 220" role="img" aria-label="Grafik jumlah anggota dengan catatan presensi selama 14 hari terakhir" data-values="{{ trend|map(attribute='total')|list|tojson|forceescape }}" data-labels="{{ trend|map(attribute='label')|list|tojson|forceescape }}"></svg>
+        </article>
+    </section>
+
+    <section class="records-card">
+        <div class="records-header">
+            <div><h2>Catatan kehadiran</h2><p>Menampilkan maksimal 250 catatan sesuai filter.</p></div>
+            <form class="record-filters" method="GET">
+                <input type="date" name="from" value="{{ date_from }}" aria-label="Dari tanggal">
+                <input type="date" name="to" value="{{ date_to }}" aria-label="Sampai tanggal">
+                <select name="status" aria-label="Filter status">
+                    <option value="">Semua status</option>
+                    {% for item in ['Hadir','Izin','Sakit','Alpha'] %}<option value="{{ item }}" {% if selected_status == item %}selected{% endif %}>{{ item }}</option>{% endfor %}
+                </select>
+                <button class="btn btn-tonal" type="submit"><span class="material-symbols-outlined">filter_list</span> Terapkan</button>
+            </form>
+            <input class="record-search" id="record-search" type="search" placeholder="Cari anggota…" oninput="filterRecords()" aria-label="Cari anggota">
+        </div>
+        <div class="records-scroll">
+            <table class="records-table">
+                <thead><tr><th>Anggota</th><th>Tanggal</th><th>Waktu</th><th>Status</th><th style="text-align:right">Ubah status</th></tr></thead>
+                <tbody id="records-body">
+                    {% for record in history %}
+                    <tr data-search="{{ (record.full_name ~ ' ' ~ record.class ~ ' ' ~ (record.username or ''))|lower }}">
+                        <td class="member-cell"><b>{{ record.full_name }}</b><span>Kelas {{ record.class }}{% if record.username %} · @{{ record.username }}{% endif %}</span></td>
+                        <td class="date-cell">{{ record.scan_time[:10] }}</td>
+                        <td>{{ record.scan_time[11:16] }}</td>
+                        <td><span class="status-chip status-{{ record.status|lower }}">{{ record.status }}</span></td>
+                        <td><div class="row-actions">
+                            {% for item, icon, color in [('Hadir','check_circle','#287d42'),('Izin','mail','#a96500'),('Sakit','medical_services','#3579ad'),('Alpha','cancel','#bf4040')] %}
+                            <form action="{{ url_for('admin.update_attendance', id=record.id, status=item) }}" method="POST"><button class="btn btn-icon" type="submit" title="Ubah menjadi {{ item }}" aria-label="Ubah {{ record.full_name }} menjadi {{ item }}" style="color:{{ color }}"><span class="material-symbols-outlined" style="font-size:18px">{{ icon }}</span></button></form>
+                            {% endfor %}
+                        </div></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="records-empty">Tidak ada catatan untuk rentang dan status ini.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+<script>
+(() => {
+    const chart = document.getElementById('attendance-donut');
+    const values = chart.dataset.values.split(',').map(value => Number(value) || 0);
+    const colors = ['#35824c', '#d99725', '#4388c5', '#c94c4c', 'var(--md-sys-color-outline-variant)'];
+    const total = values.reduce((sum, value) => sum + value, 0);
+    document.getElementById('donut-total').textContent = values.slice(0, 4).reduce((sum, value) => sum + value, 0);
+    if (total) {
+        let cursor = 0;
+        const stops = values.map((value, index) => {
+            const start = cursor;
+            cursor += value / total * 100;
+            return `${colors[index]} ${start}% ${cursor}%`;
+        });
+        chart.style.background = `conic-gradient(${stops.join(',')})`;
+    }
+    const trend = document.getElementById('attendance-trend');
+    const valuesByDay = JSON.parse(trend.dataset.values);
+    const labelsByDay = JSON.parse(trend.dataset.labels);
+    const namespace = 'http://www.w3.org/2000/svg';
+    const maxValue = Math.max(1, ...valuesByDay);
+    function renderTrend() {
+        const width = Math.max(320, Math.round(trend.getBoundingClientRect().width || 760));
+        const left = 34, right = width - 8;
+        const plotWidth = right - left;
+        const step = plotWidth / Math.max(1, valuesByDay.length - 1);
+        const chartTop = 22, chartBottom = 164, chartHeight = chartBottom - chartTop;
+        trend.replaceChildren();
+        trend.setAttribute('viewBox', `0 0 ${width} 220`);
+        [...new Set([maxValue, Math.ceil(maxValue / 2), 0])].forEach(tick => {
+            const y = chartBottom - chartHeight * tick / maxValue;
+            const line = document.createElementNS(namespace, 'line');
+            line.setAttribute('x1', left); line.setAttribute('x2', right);
+            line.setAttribute('y1', y); line.setAttribute('y2', y);
+            line.setAttribute('class', 'trend-gridline'); trend.appendChild(line);
+            const axis = document.createElementNS(namespace, 'text');
+            axis.setAttribute('x', left - 6); axis.setAttribute('y', y - 4);
+            axis.setAttribute('text-anchor', 'end'); axis.setAttribute('class', 'trend-axis-label');
+            axis.textContent = tick; trend.appendChild(axis);
+        });
+        valuesByDay.forEach((value, index) => {
+            const center = left + index * step;
+            const barWidth = Math.min(22, step * .62);
+            const height = value ? Math.max(4, value / maxValue * chartHeight) : 2;
+            const rect = document.createElementNS(namespace, 'rect');
+            rect.setAttribute('x', center - barWidth / 2); rect.setAttribute('y', chartBottom - height);
+            rect.setAttribute('width', barWidth); rect.setAttribute('height', height);
+            rect.setAttribute('rx', '5'); rect.setAttribute('class', 'trend-bar');
+            rect.setAttribute('opacity', value ? '.88' : '.2');
+            const title = document.createElementNS(namespace, 'title');
+            title.textContent = `${labelsByDay[index]} · ${value} anggota`; rect.appendChild(title);
+            trend.appendChild(rect);
+            if (value) {
+                const valueLabel = document.createElementNS(namespace, 'text');
+                valueLabel.setAttribute('x', center); valueLabel.setAttribute('y', chartBottom - height - 7);
+                valueLabel.setAttribute('text-anchor', 'middle'); valueLabel.setAttribute('class', 'trend-value');
+                valueLabel.textContent = value; trend.appendChild(valueLabel);
+            }
+            const showDate = width >= 520 || index % 2 === 0 || index === valuesByDay.length - 1;
+            if (showDate) {
+                const dayLabel = document.createElementNS(namespace, 'text');
+                dayLabel.setAttribute('x', center); dayLabel.setAttribute('y', '196');
+                dayLabel.setAttribute('text-anchor', 'middle'); dayLabel.setAttribute('class', 'trend-axis-label');
+                dayLabel.textContent = width < 520 ? labelsByDay[index].split(' ')[0] : labelsByDay[index];
+                trend.appendChild(dayLabel);
+            }
+        });
+    }
+    renderTrend();
+    if ('ResizeObserver' in window) new ResizeObserver(renderTrend).observe(trend);
+    else window.addEventListener('resize', renderTrend);
+})();
+function filterRecords() {
+    const query = document.getElementById('record-search').value.trim().toLowerCase();
+    document.querySelectorAll('#records-body tr[data-search]').forEach(row => {
+        row.hidden = !row.dataset.search.includes(query);
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,681 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Pengaturan{% endblock %}
+
+{% block head %}
+<style>
+    .settings-page {
+        max-width: 1240px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 22px;
+    }
+
+    .settings-intro { padding: 4px 2px 8px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
+    .settings-intro-main { min-width: 0; }
+    .settings-intro h1 { margin: 0 0 6px; font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 700; letter-spacing: -.035em; }
+    .settings-intro p { margin: 0; color: var(--md-sys-color-on-surface-variant); }
+    .settings-layout { display:grid; grid-template-columns:minmax(0,1fr); align-items:start; gap:14px; }
+    .settings-nav { position:sticky; top:calc(var(--header-height, 64px) + 8px); z-index:5; display:flex; align-items:center; gap:5px; min-width:0; padding:6px; overflow-x:auto; border:1px solid var(--md-sys-color-outline-variant); border-radius:14px; background:var(--md-sys-color-surface); box-shadow:0 4px 14px rgba(20,20,40,.05); scrollbar-width:thin; }
+    .settings-nav a { display:flex; flex:0 0 auto; align-items:center; gap:8px; min-height:40px; padding:0 12px; border-radius:9px; color:var(--md-sys-color-on-surface-variant); text-decoration:none; font-size:.84rem; font-weight:600; white-space:nowrap; }
+    .settings-nav a:hover, .settings-nav a:focus-visible, .settings-nav a[aria-current="page"] { color:var(--md-sys-color-primary); background:var(--md-sys-color-primary-container); outline:none; }
+    .settings-nav .material-symbols-outlined { font-size:19px; }
+    .settings-content { min-width:0; display:grid; gap:16px; }
+    .settings-profile-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+    .settings-profile-fields .text-field { min-width: 0; }
+    .settings-profile-fields .text-field:nth-child(1),
+    .settings-profile-fields .text-field:nth-child(2),
+    .settings-profile-fields .text-field:nth-child(3),
+    .settings-profile-fields .text-field:nth-child(6) { grid-column: 1 / -1; }
+    .push-controls { display: flex; align-items: center; gap: 8px; }
+    .push-controls [hidden] { display: none !important; }
+    @media (max-width: 600px) { .settings-profile-fields { grid-template-columns: 1fr; } .settings-profile-fields .text-field { grid-column: 1 !important; } }
+
+    .settings-section {
+        background: var(--md-sys-color-surface);
+        border-radius: 17px;
+        padding: clamp(18px, 3vw, 26px);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        box-shadow: 0 2px 12px rgba(25, 25, 40, .035);
+    }
+
+    .settings-section h3 {
+        margin: 0 0 10px;
+        font-size: 1rem;
+        font-weight: 650;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .setting-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--md-sys-color-surface-variant);
+    }
+
+    .setting-item:last-child { border-bottom: none; }
+
+    .setting-info { flex: 1; }
+    .setting-label { font-weight: 600; display: block; }
+    .setting-desc { font-size: 0.8rem; color: var(--md-sys-color-outline); }
+
+    /* Switch Component */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 52px;
+        height: 32px;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: var(--md-sys-color-surface-container-highest);
+        transition: .4s;
+        border-radius: 32px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 24px; width: 24px;
+        left: 4px; bottom: 4px;
+        background-color: var(--md-sys-color-outline);
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider { background-color: var(--md-sys-color-primary); }
+    input:checked + .slider:before {
+        transform: translateX(20px);
+        background-color: var(--md-sys-color-on-primary);
+    }
+
+    .custom-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .selectable-item {
+        padding: 12px;
+        border-radius: var(--radius-l);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: var(--md-sys-color-surface-container-low);
+        color: var(--md-sys-color-on-surface);
+        font: inherit;
+        text-align: center;
+    }
+
+    .selectable-item.active {
+        background: var(--md-sys-color-primary-container);
+        border-color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary-container);
+    }
+
+    .selectable-item .material-symbols-outlined { font-size: 24px; }
+    .selectable-item span:not(.material-symbols-outlined) { font-size: 0.8rem; font-weight: 600; }
+    .device-mode-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .settings-avatar-row { display:flex; align-items:center !important; justify-content:flex-start !important; gap:18px; margin:8px 0 22px; padding:16px; border:1px solid var(--md-sys-color-outline-variant); border-radius:14px; background:var(--md-sys-color-surface-container-low); }
+    .settings-avatar-row form { align-items:flex-start !important; }
+    .settings-section[id] { scroll-margin-top:84px; }
+    .settings-content [hidden] { display:none !important; }
+    .settings-section h3 { padding-bottom:14px; margin-bottom:6px; border-bottom:1px solid var(--md-sys-color-outline-variant); }
+    .settings-content .text-field { margin-bottom:14px; }
+    .settings-content .text-field input, .settings-content .text-field textarea { border-radius:11px; }
+    .settings-logout { padding:0 !important; }
+    .settings-logout-link { width:100%; justify-content:center; }
+    .settings-delete-section { scroll-margin-top:84px; }
+    @media (max-width: 760px) {
+        .settings-layout { gap:12px; }
+        .settings-nav { top:calc(var(--header-height, 56px) + 4px); }
+        .settings-nav a { min-height:38px; padding:0 10px; font-size:.78rem; }
+        .settings-intro { align-items:flex-start; }
+    }
+    @media (max-width: 480px) {
+        .settings-intro { flex-direction:column; }
+        .settings-avatar-row { gap:12px; padding:12px; }
+        .settings-avatar-row img,.settings-avatar-row > div > div { width:76px !important; height:76px !important; border-radius:22px !important; }
+        .settings-section { padding:16px; }
+        .device-mode-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        .device-mode-grid .selectable-item { min-height:64px; flex-direction:row; justify-content:center; }
+        .settings-content .setting-item { gap:12px; }
+        .settings-content .setting-info { min-width:0; }
+        .settings-content .setting-label { font-size:.9rem; }
+        .settings-content .setting-desc { line-height:1.45; }
+        .push-controls { flex-wrap:wrap; justify-content:flex-end; }
+    }
+    @media (max-width: 380px) { .settings-nav a { padding-inline:8px; font-size:.74rem; } .settings-nav a .material-symbols-outlined { display:none; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-page fade-in">
+    <div class="settings-intro">
+        <div class="settings-intro-main">
+            <span class="settings-eyebrow">PREFERENSI</span>
+            <h1>Pengaturan</h1>
+            <p>Profil dan preferensi akun</p>
+        </div>
+    </div>
+    <div class="settings-layout">
+        <nav class="settings-nav" aria-label="Navigasi pengaturan">
+            <a href="#settings-profile"><span class="material-symbols-outlined">person</span>Profil</a>
+            <a href="#settings-appearance"><span class="material-symbols-outlined">palette</span>Tampilan</a>
+            <a href="#settings-navigation"><span class="material-symbols-outlined">navigation</span>Navigasi</a>
+            <a href="#settings-notifications"><span class="material-symbols-outlined">notifications</span>Notifikasi</a>
+            <a href="#settings-advanced"><span class="material-symbols-outlined">tune</span>Lanjutan</a>
+            <a href="#delete-account-section"><span class="material-symbols-outlined">manage_accounts</span>Akun</a>
+        </nav>
+        <div class="settings-content">
+    <!-- Profile Edit Section -->
+    <div class="settings-section settings-profile-section" id="settings-profile">
+        <h3><span class="material-symbols-outlined">person_edit</span> Informasi Profil</h3>
+        
+        <!-- PFP Upload -->
+        <div class="settings-avatar-row">
+            <div style="position: relative;">
+                {% if user.avatar and user.avatar != 'default_avatar.png' %}
+                    <img src="{{ url_for('media_avatar', filename=user.avatar) }}" style="width: 100px; height: 100px; border-radius: 32px; object-fit: cover; border: 3px solid var(--md-sys-color-primary-container);" alt="">
+                {% else %}
+                    <div style="width: 100px; height: 100px; border-radius: 32px; background: var(--md-sys-color-surface-container-highest); display: flex; align-items: center; justify-content: center; color: var(--md-sys-color-outline);">
+                        <span class="material-symbols-outlined" style="font-size: 48px;">person</span>
+                    </div>
+                {% endif %}
+            </div>
+            <form action="{{ url_for('profile.upload_avatar') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <input type="file" name="avatar" id="avatar-input" style="display: none;" accept="image/*" onchange="this.form.submit()">
+                <button type="button" onclick="document.getElementById('avatar-input').click()" class="btn btn-tonal" style="height: 40px; font-size: 0.85rem;">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">upload</span>
+                    Ubah Foto Profil
+                </button>
+                <span style="font-size: 0.7rem; color: var(--md-sys-color-outline);">PNG, JPG (Maks. 2MB)</span>
+            </form>
+        </div>
+
+        <form action="{{ url_for('profile.settings') }}" method="POST">
+            <div class="settings-profile-fields">
+            <div class="text-field">
+                <label>Nama Lengkap</label>
+                <input type="text" name="full_name" value="{{ user.full_name }}" required>
+            </div>
+            <div class="text-field">
+                <label>Nama Panggilan</label>
+                <input type="text" name="nickname" value="{{ user.nickname or '' }}">
+            </div>
+            <div class="text-field">
+                <label>Username</label>
+                <input type="text" name="username" value="{{ user.username or '' }}" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" autocomplete="username" required>
+                <small>3–24 karakter, huruf, angka, atau garis bawah.</small>
+            </div>
+            <div class="text-field">
+                <label>Kelas / Satuan</label>
+                <input type="text" name="class" value="{{ user.class }}" maxlength="60" required>
+            </div>
+            <div class="text-field">
+                <label>No. WhatsApp</label>
+                <input type="tel" name="phone" value="{{ user.phone or '' }}" placeholder="08...">
+            </div>
+            <div class="text-field">
+                <label>Tanggal Lahir</label>
+                <input type="date" name="birth_date" value="{{ user.birth_date or '' }}">
+            </div>
+            <div class="text-field">
+                <label>Bio Singkat</label>
+                <textarea name="bio" placeholder="Tulis sedikit tentang diri Anda...">{{ user.bio or '' }}</textarea>
+            </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-large" style="width: 100%; margin-top: 16px;">
+                <span class="material-symbols-outlined">save</span>
+                Simpan Profil
+            </button>
+        </form>
+    </div>
+
+    <!-- Appearance Section -->
+    <div class="settings-section settings-appearance-section" id="settings-appearance">
+        <h3><span class="material-symbols-outlined">palette</span> Tampilan</h3>
+        
+        <div class="setting-item">
+            <div class="setting-info">
+                <span class="setting-label">Mode gelap</span>
+                <span class="setting-desc">Tema gelap untuk tampilan.</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="dark-mode-toggle" {% if prefs.get('dark_mode') %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div style="margin-top: 16px;">
+            <span class="setting-label" style="margin-bottom: 8px; display: block;">Tata letak perangkat</span>
+            <div class="custom-grid device-mode-grid">
+                <button type="button" class="selectable-item device-mode-item {% if prefs.get('device_mode', 'auto') == 'mobile' %}active{% endif %}" data-mode="mobile" aria-pressed="{{ 'true' if prefs.get('device_mode', 'auto') == 'mobile' else 'false' }}">
+                    <span class="material-symbols-outlined">smartphone</span>
+                    <span>Mobile</span>
+                </button>
+                <button type="button" class="selectable-item device-mode-item {% if prefs.get('device_mode', 'auto') == 'tablet' %}active{% endif %}" data-mode="tablet" aria-pressed="{{ 'true' if prefs.get('device_mode', 'auto') == 'tablet' else 'false' }}">
+                    <span class="material-symbols-outlined">tablet</span>
+                    <span>Tablet</span>
+                </button>
+                <button type="button" class="selectable-item device-mode-item {% if prefs.get('device_mode', 'auto') == 'desktop' %}active{% endif %}" data-mode="desktop" aria-pressed="{{ 'true' if prefs.get('device_mode', 'auto') == 'desktop' else 'false' }}">
+                    <span class="material-symbols-outlined">desktop_windows</span>
+                    <span>Desktop</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Experimental Features Section -->
+    <div class="settings-section settings-experimental settings-advanced-section" id="settings-advanced">
+        <h3><span class="material-symbols-outlined">tune</span> Preferensi Lanjutan</h3>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <span class="setting-label">Aktifkan UI Layout Baru</span>
+                <span class="setting-desc">Tata letak desktop alternatif.</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="experimental-layout-toggle" {% if prefs.get('experimental_layout') %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <span class="setting-label">Mode Kompak</span>
+                <span class="setting-desc">Kurangi jarak dan ruang.</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="compact-mode-toggle" {% if prefs.get('compact_mode') %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <span class="setting-label">Animasi Lanjutan</span>
+                <span class="setting-desc">Aktifkan transisi tambahan.</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="advanced-animations-toggle" {% if prefs.get('advanced_animations') %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <span class="setting-label">Debug Layout</span>
+                <span class="setting-desc">Tampilkan garis bantu tata letak.</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="debug-layout-toggle" {% if prefs.get('debug_layout') %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Navigation Section -->
+    <div class="settings-section settings-navigation-section" id="settings-navigation">
+        <h3><span class="material-symbols-outlined">navigation</span> Kustomisasi Navigasi</h3>
+        <p class="setting-desc" style="margin-bottom: 16px;">Pilih hingga 5 menu.</p>
+        
+        <div class="custom-grid" id="nav-customizer">
+            <button type="button" class="selectable-item" data-id="home" aria-pressed="false">
+                <span class="material-symbols-outlined">home</span>
+                <span>Beranda</span>
+            </button>
+            <button type="button" class="selectable-item" data-id="attendance" aria-pressed="false">
+                <span class="material-symbols-outlined">fact_check</span>
+                <span>Absensi</span>
+            </button>
+            <button type="button" class="selectable-item" data-id="schedule" aria-pressed="false">
+                <span class="material-symbols-outlined">event</span>
+                <span>Jadwal</span>
+            </button>
+            <button type="button" class="selectable-item" data-id="members" aria-pressed="false">
+                <span class="material-symbols-outlined">groups</span>
+                <span>Anggota</span>
+            </button>
+            <button type="button" class="selectable-item" data-id="profile" aria-pressed="false">
+                <span class="material-symbols-outlined">person</span>
+                <span>Profil</span>
+            </button>
+        </div>
+        <button onclick="saveNavPrefs()" class="btn btn-tonal" style="width: 100%; margin-top: 20px;">
+            Simpan Navigasi
+        </button>
+    </div>
+
+    <!-- Notification Settings Section -->
+    <div class="settings-section settings-notification-section" id="settings-notifications">
+        <h3><span class="material-symbols-outlined">notifications_active</span> Notifikasi</h3>
+        
+        <div class="setting-item">
+            <div class="setting-info">
+                <span class="setting-label">Browser Push Notification</span>
+                <span id="push-status" class="setting-desc">Status: Memeriksa...</span>
+            </div>
+            <div class="push-controls">
+                <button id="push-btn" type="button" onclick="togglePush()" class="btn btn-tonal" style="min-width: 100px;">Aktifkan</button>
+                <button id="push-test-btn" type="button" onclick="sendPushTest()" class="btn btn-tonal" hidden>Kirim tes</button>
+            </div>
+        </div>
+        <p style="margin:-8px 0 0;color:var(--md-sys-color-outline);font-size:.82rem;line-height:1.5">Notifikasi uji dikirim hanya ke perangkat ini setelah Anda mengaktifkan push.</p>
+
+        <div style="margin-top: 24px; border-top: 1px solid var(--md-sys-color-outline-variant); padding-top: 16px;">
+            <span style="font-size: 0.85rem; font-weight: 800; color: var(--md-sys-color-outline); text-transform: uppercase;">Preferensi Kategori</span>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-label">Presensi</span>
+                    <span class="setting-desc">Perubahan presensi.</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" class="notif-type-toggle" data-category="attendance">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-label">Pengumuman</span>
+                    <span class="setting-desc">Pengumuman organisasi.</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" class="notif-type-toggle" data-category="announcement">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-label">Jadwal & Latihan</span>
+                    <span class="setting-desc">Perubahan kegiatan.</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" class="notif-type-toggle" data-category="schedule">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="settings-logout">
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-tonal btn-large settings-logout-link">
+            <span class="material-symbols-outlined">logout</span>
+            Keluar dari Akun
+        </a>
+    </div>
+
+    <section id="delete-account-section" class="settings-section settings-delete-section" style="border-color: var(--md-sys-color-error);">
+        <h3 style="color: var(--md-sys-color-error);"><span class="material-symbols-outlined">delete_forever</span> Hapus Akun</h3>
+        <p class="setting-desc" style="line-height: 1.6; margin-bottom: 18px;">Penghapusan akun bersifat permanen. Profil, pesan, saran, laporan, dan riwayat pribadi Anda akan dihapus. Pengumuman dan catatan bersama tetap tersedia dengan nama penulis dihapus.</p>
+        <form action="{{ url_for('profile.delete_account') }}" method="POST" onsubmit="return confirm('Akun dan data pribadi Anda akan dihapus permanen. Lanjutkan?')">
+            {% if user.password %}
+            <div class="text-field">
+                <label for="delete-account-password">Kata sandi saat ini</label>
+                <input id="delete-account-password" type="password" name="password" autocomplete="current-password" required>
+            </div>
+            {% else %}
+            <div class="text-field">
+                <label for="delete-account-username">Ketik {{ user.username or user.full_name }} untuk konfirmasi</label>
+                <input id="delete-account-username" type="text" name="username_confirmation" autocomplete="off" required>
+            </div>
+            {% endif %}
+            <button type="submit" class="btn btn-large" style="width: 100%; color: var(--md-sys-color-error); border: 1px solid var(--md-sys-color-error); background: transparent;">
+                <span class="material-symbols-outlined">delete_forever</span> Hapus akun dan data saya
+            </button>
+        </form>
+    </section>
+        </div>
+    </div>
+</div>
+
+<script>
+    const userPrefs = {{ prefs|tojson }};
+
+    // Render only the selected settings category to keep the page focused.
+    const settingsTabs = [...document.querySelectorAll('.settings-nav a')];
+    const settingsSections = [...document.querySelectorAll('.settings-content > .settings-section')];
+    const settingsLogout = document.querySelector('.settings-logout');
+    function showSettingsTab(hash, updateUrl = false) {
+        const tab = settingsTabs.find(link => link.hash === hash) || settingsTabs[0];
+        const activeHash = tab.hash;
+        settingsTabs.forEach(link => {
+            const active = link === tab;
+            link.setAttribute('aria-current', active ? 'page' : 'false');
+            link.setAttribute('aria-selected', String(active));
+        });
+        settingsSections.forEach(section => {
+            const account = activeHash === '#delete-account-section';
+            section.hidden = account ? section.id !== 'delete-account-section' : `#${section.id}` !== activeHash;
+        });
+        if (settingsLogout) settingsLogout.hidden = activeHash !== '#delete-account-section';
+        if (updateUrl && location.hash !== activeHash) history.replaceState(null, '', activeHash);
+    }
+    settingsTabs.forEach(link => link.addEventListener('click', event => {
+        event.preventDefault();
+        showSettingsTab(link.hash, true);
+    }));
+    showSettingsTab(location.hash || '#settings-profile');
+
+    const navItems = document.querySelectorAll('#nav-customizer .selectable-item');
+    let selectedNav = (userPrefs.bottom_nav || ['home', 'attendance', 'schedule', 'members', 'profile']).filter(id => id !== 'forum');
+    if (!selectedNav.length) selectedNav = ['home', 'attendance', 'schedule', 'profile'];
+
+    // Initialize Nav UI
+    navItems.forEach(item => {
+        if (selectedNav.includes(item.dataset.id)) {
+            item.classList.add('active');
+            item.setAttribute('aria-pressed', 'true');
+        }
+        item.onclick = () => {
+            const id = item.dataset.id;
+            if (selectedNav.includes(id)) {
+                if (selectedNav.length > 1) {
+                    selectedNav = selectedNav.filter(i => i !== id);
+                    item.classList.remove('active');
+                    item.setAttribute('aria-pressed', 'false');
+                }
+            } else {
+                if (selectedNav.length < 5) {
+                    selectedNav.push(id);
+                    item.classList.add('active');
+                    item.setAttribute('aria-pressed', 'true');
+                } else {
+                    alert('Maksimal 5 menu navigasi.');
+                }
+            }
+        };
+    });
+
+    async function updatePref(key, value) {
+        userPrefs[key] = value;
+        await fetch('{{ url_for("profile.settings") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(userPrefs)
+        });
+        if (key === 'dark_mode') {
+            document.body.classList.toggle('dark-theme', value);
+        }
+    }
+
+    async function saveNavPrefs() {
+        userPrefs.bottom_nav = selectedNav;
+        await fetch('{{ url_for("profile.settings") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(userPrefs)
+        });
+        location.reload();
+    }
+
+    document.getElementById('dark-mode-toggle').onchange = (e) => updatePref('dark_mode', e.target.checked);
+    document.getElementById('compact-mode-toggle').onchange = (e) => updatePref('compact_mode', e.target.checked);
+    document.getElementById('experimental-layout-toggle').onchange = (e) => updatePref('experimental_layout', e.target.checked);
+    document.getElementById('advanced-animations-toggle').onchange = (e) => updatePref('advanced_animations', e.target.checked);
+    document.getElementById('debug-layout-toggle').onchange = (e) => updatePref('debug_layout', e.target.checked);
+
+    // Device Mode selection logic
+    const deviceItems = document.querySelectorAll('.device-mode-item');
+    deviceItems.forEach(item => {
+        item.onclick = async () => {
+            const mode = item.dataset.mode;
+            deviceItems.forEach(i => {
+                i.classList.remove('active');
+                i.setAttribute('aria-pressed', 'false');
+            });
+            item.classList.add('active');
+            item.setAttribute('aria-pressed', 'true');
+            await updatePref('device_mode', mode);
+            location.reload(); // Reload to apply layout changes fully
+        };
+    });
+
+    // Initialize Notif Type Toggles
+    const notifToggles = document.querySelectorAll('.notif-type-toggle');
+    const currentNotifPrefs = userPrefs.notif_types || {};
+    
+    notifToggles.forEach(toggle => {
+        const cat = toggle.dataset.category;
+        // Default to true if not set
+        toggle.checked = currentNotifPrefs[cat] !== false;
+        
+        toggle.onchange = (e) => {
+            if (!userPrefs.notif_types) userPrefs.notif_types = {};
+            userPrefs.notif_types[cat] = e.target.checked;
+            updatePref('notif_types', userPrefs.notif_types);
+        };
+    });
+
+    // Push Notification Management
+    const pushBtn = document.getElementById('push-btn');
+    const pushStatus = document.getElementById('push-status');
+    const pushTestBtn = document.getElementById('push-test-btn');
+
+    async function checkPushStatus() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+            pushStatus.textContent = 'Tidak didukung oleh browser Anda.';
+            pushBtn.disabled = true;
+            return;
+        }
+
+        if (Notification.permission === 'denied') {
+            pushStatus.textContent = 'Izin ditolak. Silakan aktifkan di pengaturan browser.';
+            pushBtn.disabled = false;
+            pushBtn.textContent = 'Atur izin';
+            pushTestBtn.hidden = true;
+            return;
+        }
+
+        try {
+            if (Notification.permission === 'granted') {
+                await navigator.serviceWorker.register('/sw.js');
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.getSubscription();
+                if (subscription) {
+                    await subscribeToPush();
+                    pushStatus.textContent = 'Aktif di perangkat ini.';
+                    pushBtn.textContent = 'Matikan';
+                    pushBtn.classList.add('btn-error');
+                    pushTestBtn.hidden = false;
+                } else {
+                    pushStatus.textContent = 'Izin tersedia, notifikasi belum diaktifkan.';
+                    pushBtn.textContent = 'Aktifkan';
+                    pushBtn.classList.remove('btn-error');
+                    pushTestBtn.hidden = true;
+                }
+            } else {
+                pushStatus.textContent = 'Notifikasi browser belum diizinkan.';
+                pushBtn.textContent = 'Aktifkan';
+                pushBtn.classList.remove('btn-error');
+                pushTestBtn.hidden = true;
+            }
+        } catch (error) {
+            pushStatus.textContent = `Gagal memeriksa notifikasi: ${error.message}`;
+        }
+    }
+
+    async function togglePush() {
+        pushBtn.disabled = true;
+        try {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+                throw new Error('Browser ini tidak mendukung notifikasi push.');
+            }
+
+            await navigator.serviceWorker.register('/sw.js');
+            const registration = await navigator.serviceWorker.ready;
+            const existing = await registration.pushManager.getSubscription();
+            if (existing && Notification.permission === 'granted') {
+                const previous = existing.toJSON();
+                await existing.unsubscribe();
+                const response = await fetch('/notifications/unsubscribe', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(previous)
+                });
+                if (!response.ok) throw new Error('Perangkat gagal dikeluarkan dari daftar notifikasi.');
+                pushStatus.textContent = 'Notifikasi dimatikan untuk perangkat ini.';
+                pushBtn.textContent = 'Aktifkan';
+                pushBtn.classList.remove('btn-error');
+                pushTestBtn.hidden = true;
+                return;
+            }
+
+            const permission = Notification.permission === 'granted'
+                ? 'granted'
+                : await Notification.requestPermission();
+            if (permission !== 'granted') {
+                pushStatus.textContent = permission === 'denied'
+                    ? 'Izin ditolak. Ubah izin notifikasi di pengaturan browser.'
+                    : 'Izin notifikasi belum diberikan.';
+                return;
+            }
+
+            await subscribeToPush();
+            pushStatus.textContent = 'Aktif di perangkat ini.';
+            pushBtn.textContent = 'Matikan';
+            pushBtn.classList.add('btn-error');
+            pushTestBtn.hidden = false;
+        } catch (error) {
+            pushStatus.textContent = error.message || 'Notifikasi gagal diaktifkan.';
+        } finally {
+            pushBtn.disabled = false;
+        }
+    }
+
+    async function sendPushTest() {
+        pushTestBtn.disabled = true;
+        try {
+            const response = await fetch('/notifications/test-push', {method: 'POST'});
+            const data = await response.json();
+            pushStatus.textContent = response.ok
+                ? `Notifikasi uji dikirim ke ${data.sent} perangkat.`
+                : (data.message || 'Notifikasi uji gagal dikirim.');
+        } catch (error) {
+            pushStatus.textContent = 'Tidak dapat menghubungi layanan notifikasi.';
+        } finally {
+            pushTestBtn.disabled = false;
+        }
+    }
+
+    checkPushStatus();
+</script>
+{% endblock %}

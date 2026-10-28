@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Notifikasi{% endblock %}
+
+{% block head %}
+<style>
+    .notif-page {
+        max-width: 800px;
+        margin: 0 auto;
+        padding-bottom: 40px;
+    }
+
+    .notif-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding: 0 4px;
+    }
+
+    .notif-list {
+        display: flex;
+        flex-direction: column;
+        background: var(--md-sys-color-surface);
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .notif-item {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        transition: background 0.2s;
+        text-decoration: none;
+        color: inherit;
+        position: relative;
+    }
+
+    .notif-item:last-child {
+        border-bottom: none;
+    }
+
+    .notif-item:hover {
+        background: var(--md-sys-color-surface-container-low);
+    }
+
+    .notif-item.unread {
+        background: var(--md-sys-color-primary-container);
+        color: var(--md-sys-color-on-primary-container);
+    }
+
+    .notif-item.unread:hover {
+        background: #d4d4ff;
+    }
+
+    .notif-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--md-sys-color-surface-container-high);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: var(--md-sys-color-primary);
+    }
+
+    .unread .notif-icon {
+        background: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
+    }
+
+    .notif-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .notif-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2px;
+    }
+
+    .notif-title {
+        font-weight: 700;
+        font-size: 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .notif-time {
+        font-size: 0.75rem;
+        color: var(--md-sys-color-outline);
+        white-space: nowrap;
+        margin-left: 8px;
+    }
+
+    .unread .notif-time {
+        color: var(--md-sys-color-on-primary-container);
+        opacity: 0.8;
+    }
+
+    .notif-msg {
+        font-size: 0.9rem;
+        line-height: 1.4;
+        color: var(--md-sys-color-on-surface-variant);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .unread .notif-msg {
+        color: var(--md-sys-color-on-primary-container);
+        opacity: 0.9;
+    }
+
+    .notif-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 8px;
+    }
+
+    .empty-state {
+        padding: 60px 24px;
+        text-align: center;
+        color: var(--md-sys-color-outline);
+    }
+
+    .empty-state .material-symbols-outlined {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notif-page slide-up">
+    <div class="notif-header">
+        <h1 style="font-weight: 800; font-size: 1.75rem;">Notifikasi</h1>
+        <button onclick="markAllRead()" class="btn btn-tonal" style="height: 40px; padding: 0 16px; border-radius: 12px;">
+            <span class="material-symbols-outlined">done_all</span>
+            <span>Baca Semua</span>
+        </button>
+    </div>
+
+    <div class="notif-list" id="full-notif-list">
+        <div class="empty-state">
+            <span class="material-symbols-outlined animate-spin">sync</span>
+            <p>Memuat...</p>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 32px;">
+        <button onclick="clearAllNotifications()" style="background: none; border: none; color: var(--md-sys-color-error); font-weight: 600; cursor: pointer; font-size: 0.85rem;">
+            Hapus Semua Riwayat
+        </button>
+    </div>
+</div>
+
+<script>
+    async function loadFullNotifications() {
+        const list = document.getElementById('full-notif-list');
+        try {
+            const res = await fetch('/notifications/');
+            const data = await res.json();
+            
+            if (data.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">notifications_off</span>
+                        <p>Tidak ada notifikasi untuk saat ini.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = '';
+            data.forEach(n => {
+                const item = document.createElement('div');
+                item.className = `notif-item ${n.is_read ? '' : 'unread'}`;
+                
+                const timeStr = getRelativeTime(new Date(n.created_at));
+                
+                item.innerHTML = `
+                    <div class="notif-icon">
+                        <span class="material-symbols-outlined">${getIconForType(n.type)}</span>
+                    </div>
+                    <div class="notif-content" onclick="handleNotifClick(${n.id}, '${n.url || ''}')" style="cursor: pointer;">
+                        <div class="notif-top">
+                            <span class="notif-title">${n.title}</span>
+                            <span class="notif-time">${timeStr}</span>
+                        </div>
+                        <div class="notif-msg">${n.message}</div>
+                    </div>
+                    <div class="notif-actions">
+                        <button onclick="deleteNotification(${n.id})" style="background:none; border:none; color:inherit; opacity:0.5; cursor:pointer; padding: 4px;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        } catch (err) {
+            list.innerHTML = '<div class="empty-state"><p>Gagal memuat notifikasi.</p></div>';
+        }
+    }
+
+    function getRelativeTime(date) {
+        const now = new Date();
+        const diff = Math.floor((now - date) / 1000);
+        if (diff < 60) return 'Baru saja';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'j';
+        return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+    }
+
+    function getIconForType(type) {
+        switch(type) {
+            case 'success': return 'check_circle';
+            case 'warning': return 'warning';
+            case 'alert': return 'error';
+            default: return 'notifications';
+        }
+    }
+
+    async function handleNotifClick(id, url) {
+        await fetch('/notifications/mark-read', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: id})
+        });
+        if (url) window.location.href = url;
+        else loadFullNotifications();
+    }
+
+    async function deleteNotification(id) {
+        if (!confirm('Hapus notifikasi ini?')) return;
+        await fetch('/notifications/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: id})
+        });
+        loadFullNotifications();
+    }
+
+    async function markAllRead() {
+        await fetch('/notifications/mark-read', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: null})
+        });
+        loadFullNotifications();
+    }
+
+    async function clearAllNotifications() {
+        if (!confirm('Hapus semua riwayat notifikasi?')) return;
+        await fetch('/notifications/clear', { method: 'POST' });
+        loadFullNotifications();
+    }
+
+    loadFullNotifications();
+</script>
+{% endblock %}

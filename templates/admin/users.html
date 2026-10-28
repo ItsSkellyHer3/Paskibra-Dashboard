@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Manajemen Anggota{% endblock %}
+
+{% block head %}
+<style>
+    /* Stabilizing the main container - NO FIXED WIDTHS */
+    .admin-container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding-bottom: 40px;
+        box-sizing: border-box;
+    }
+
+    /* Robust Header */
+    .management-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .management-title { flex: 1; min-width: 280px; }
+    .management-title h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 5vw, 2.25rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+    }
+
+    .management-title p {
+        margin: 4px 0 0 0;
+        color: var(--md-sys-color-outline);
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    .member-summary { display:flex; gap:10px; flex-wrap:wrap; margin: 0 0 18px; }
+    .member-summary-item { display:flex; align-items:center; gap:9px; padding:9px 13px; border:1px solid var(--md-sys-color-outline-variant); border-radius:12px; background:var(--md-sys-color-surface); color:var(--md-sys-color-on-surface-variant); font-size:.84rem; }
+    .member-summary-item b { color:var(--md-sys-color-on-surface); font-size:1rem; }
+    .member-empty { display:none; padding:32px 18px; text-align:center; color:var(--md-sys-color-outline); border:1px dashed var(--md-sys-color-outline-variant); border-radius:16px; }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    /* Improved Filter Card */
+    .filter-card {
+        background: var(--md-sys-color-surface-container-low);
+        border-radius: 24px;
+        padding: 16px;
+        margin-bottom: 24px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .search-row {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .search-box {
+        background: var(--md-sys-color-surface);
+        border-radius: 16px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 56px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        width: auto;
+        flex: 1 1 300px;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .search-box input {
+        border: none;
+        background: none;
+        outline: none;
+        flex: 1;
+        font-family: inherit;
+        font-size: 1rem;
+        color: var(--md-sys-color-on-surface);
+        width: 100%;
+    }
+
+    .filter-selects {
+        display: flex;
+        flex: 0 1 auto;
+        min-width: 0;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .filter-selects::-webkit-scrollbar { display: none; }
+
+    .select-pill {
+        background: var(--md-sys-color-surface);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        border-radius: 12px;
+        padding: 0 12px;
+        height: 40px;
+        font-family: inherit;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface-variant);
+        cursor: pointer;
+        outline: none;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* Member List - Resilient Card Layout */
+    .member-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .member-item {
+        background: var(--md-sys-color-surface);
+        border-radius: 20px;
+        padding: 16px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        display: grid;
+        grid-template-columns: 1fr; /* Single column on mobile */
+        gap: 16px;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    @media (min-width: 1100px) {
+        .member-item {
+            grid-template-columns: minmax(220px, 1.35fr) minmax(260px, 2fr) minmax(120px, .8fr);
+            align-items: center;
+        }
+    }
+
+    @media (min-width: 901px) and (max-width: 1099px) {
+        .member-item { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+        .m-stats-area { grid-column: 1 / -1; }
+        .m-actions { grid-column: 1 / -1; }
+    }
+
+    .member-item:hover {
+        border-color: var(--md-sys-color-primary);
+        background: var(--md-sys-color-surface-container-low);
+    }
+
+    .member-main {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    .m-avatar-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: var(--md-sys-color-surface-container-high);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .m-avatar-box img { width: 100%; height: 100%; object-fit: cover; }
+
+    .m-info { display: flex; flex-direction: column; min-width: 0; }
+    .m-name { font-weight: 700; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .m-sub { font-size: 0.8rem; color: var(--md-sys-color-outline); }
+
+    .m-stats-area {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .badge-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .stat-badge {
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+    .badge-class { background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface); }
+    .badge-role { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+    .badge-status-active { background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
+    .badge-status-suspended { background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; }
+    .badge-status-pending { background: #FFF3E0; color: #EF6C00; border: 1px solid #FFE0B2; }
+
+    .att-mini-grid {
+        display: flex;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 12px;
+        background: var(--md-sys-color-surface-container-lowest);
+    }
+    .att-cell { display: flex; flex-direction: column; align-items: center; min-width: 24px; }
+    .att-cell b { font-size: 0.85rem; font-weight: 800; }
+    .att-cell span { font-size: 0.55rem; font-weight: 700; opacity: 0.6; text-transform: uppercase; }
+
+    .m-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    /* RENAMED ANIMATION TO FIX CLIPPING */
+    .bulk-bar {
+        position: fixed;
+        bottom: 96px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 32px);
+        max-width: 500px;
+        background: var(--md-sys-color-surface-container-high);
+        padding: 12px 20px;
+        border-radius: 24px;
+        display: none;
+        align-items: center;
+        gap: 16px;
+        box-shadow: var(--elevation-3);
+        z-index: 300;
+        border: 1px solid var(--md-sys-color-primary);
+        animation: bulkSlideIn 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
+    }
+
+    @keyframes bulkSlideIn {
+        from { transform: translate(-50%, 100px); opacity: 0; }
+        to { transform: translate(-50%, 0); opacity: 1; }
+    }
+
+    /* Custom Checkbox */
+    .sel-box {
+        width: 22px;
+        height: 22px;
+        border: 2px solid var(--md-sys-color-outline);
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+    .sel-box.checked { background: var(--md-sys-color-primary); border-color: var(--md-sys-color-primary); }
+    .sel-box .material-symbols-outlined { color: white; font-size: 16px; display: none; }
+    .sel-box.checked .material-symbols-outlined { display: block; }
+
+    /* Desktop Tweaks */
+    @media (min-width: 769px) {
+        .search-row { flex-direction: row; }
+        .bulk-bar { bottom: 32px; left: calc(50% + 140px); }
+    }
+
+    @media (max-width: 900px) {
+        .m-stats-area { width: 100%; border-top: 1px solid var(--md-sys-color-outline-variant); padding-top: 12px; }
+        .m-actions { width: 100%; border-top: 1px solid var(--md-sys-color-outline-variant); padding-top: 12px; justify-content: flex-start; }
+    }
+
+    @media (min-width: 769px) and (max-width: 1100px) {
+        .search-row { flex-direction: column; }
+        .search-box { width: 100%; flex: 1 1 auto; }
+        .filter-selects { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="slide-up admin-container">
+    <div class="management-header">
+        <div class="management-title">
+            <h1>Manajemen Anggota</h1>
+            <p>Kelola akun, kelas, dan status anggota.</p>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary">
+                <span class="material-symbols-outlined">person_add</span>
+                <span>Tambah Baru</span>
+            </a>
+            <button onclick="exportData()" class="btn btn-tonal">
+                <span class="material-symbols-outlined">download</span>
+                <span>Export</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="member-summary" aria-label="Ringkasan anggota">
+        <div class="member-summary-item"><b>{{ users|length }}</b> Total anggota</div>
+        <div class="member-summary-item"><b>{{ users|selectattr('status', 'equalto', 'active')|list|length }}</b> Aktif</div>
+        <div class="member-summary-item"><b>{{ users|selectattr('status', 'equalto', 'pending')|list|length }}</b> Menunggu</div>
+    </div>
+
+    <div class="filter-card">
+        <div class="search-row">
+            <div class="search-box">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" id="memberSearch" placeholder="Cari nama, kelas, atau jabatan..." onkeyup="filterMembers()">
+            </div>
+            <div class="filter-selects">
+                <select id="filterClass" class="select-pill" onchange="filterMembers()">
+                    <option value="all">Semua Kelas</option>
+                    {% for c in classes %}
+                    <option value="{{ c }}">Kelas {{ c }}</option>
+                    {% endfor %}
+                </select>
+                <select id="filterRole" class="select-pill" onchange="filterMembers()">
+                    <option value="all">Semua Role</option>
+                    {% for role in roles %}
+                    <option value="{{ role }}">{{ role }}</option>
+                    {% endfor %}
+                </select>
+                <select id="filterStatus" class="select-pill" onchange="filterMembers()">
+                    <option value="all">Semua Status</option>
+                    <option value="active">Aktif</option>
+                    <option value="suspended">Ditangguhkan</option>
+                    <option value="pending">Menunggu</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <form id="bulkForm" action="{{ url_for('admin.bulk_action') }}" method="POST">
+        <input type="hidden" name="action" id="bulkActionInput">
+        
+        <div class="member-list" id="memberList">
+            {% for user in users %}
+            <div class="member-item" data-name="{{ user.full_name.lower() }} {{ (user.username or '')|lower }}" data-class="{{ user.class.lower() }}" data-role="{{ user.role.lower() }}" data-status="{{ user.status }}">
+                <div class="member-main">
+                    <div class="sel-box member-check" onclick="event.preventDefault(); toggleSelect(this)">
+                        <input type="checkbox" name="user_ids" value="{{ user.id }}" style="display: none;">
+                        <span class="material-symbols-outlined">check</span>
+                    </div>
+                    
+                    <div class="m-avatar-box">
+                        {% if user.avatar and user.avatar != 'default_avatar.png' %}
+                        <img src="{{ url_for('media_avatar', filename=user.avatar) }}" loading="lazy" decoding="async" alt="">
+                        {% else %}
+                        <span class="material-symbols-outlined" style="color: var(--md-sys-color-outline); font-size: 24px;">person</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="m-info">
+                        <span class="m-name">{{ user.full_name }}</span>
+                        <span class="m-sub">@{{ user.username or 'belum_terdaftar' }}</span>
+                    </div>
+                </div>
+
+                <div class="m-stats-area">
+                    <div class="badge-group">
+                        <span class="stat-badge badge-class">Kelas {{ user.class }}</span>
+                        <span class="stat-badge badge-role">{{ user.role }}</span>
+                        <span class="stat-badge badge-status-{{ user.status }}">{{ user.status }}</span>
+                    </div>
+                    
+                    <div class="att-mini-grid">
+                        <div class="att-cell" title="Hadir"><b style="color: #2E7D32;">{{ user.hadir }}</b><span>H</span></div>
+                        <div class="att-cell" title="Izin"><b style="color: #EF6C00;">{{ user.izin }}</b><span>I</span></div>
+                        <div class="att-cell" title="Sakit"><b style="color: #1976D2;">{{ user.sakit }}</b><span>S</span></div>
+                        <div class="att-cell" title="Alpha"><b style="color: #C62828;">{{ user.alpha }}</b><span>A</span></div>
+                    </div>
+                </div>
+
+                <div class="m-actions">
+                    {% if user.role != 'Owner' or session.get('role') == 'Owner' %}<a href="{{ url_for('admin.edit_user', id=user.id) }}" class="btn btn-icon" title="Ubah data anggota" aria-label="Ubah {{ user.full_name }}" style="background: var(--md-sys-color-surface-container-high); width: 40px; height: 40px;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
+                    </a>{% endif %}
+                    <a href="{{ url_for('profile.view_user', user_id=user.id) }}" class="btn btn-icon" title="Lihat profil" aria-label="Lihat profil {{ user.full_name }}" style="background: var(--md-sys-color-surface-container-high); width: 40px; height: 40px;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
+                    </a>
+                    {% if user.id != session.user_id and (user.role not in ['Owner', 'Admin', 'Super Admin', 'Moderator'] or session.get('role') in ['Owner', 'Super Admin']) and (user.role != 'Owner' or session.get('role') == 'Owner') %}
+                    <button type="button" class="btn btn-icon member-delete" data-user-id="{{ user.id }}" data-user-name="{{ user.full_name }}" data-user-role="{{ user.role }}" title="{% if user.role in ['Owner', 'Admin', 'Super Admin', 'Moderator'] %}Hapus akun admin{% else %}Hapus anggota{% endif %}" aria-label="Hapus akun {{ user.full_name }}" onclick="deleteMember(this)" style="background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-error); width: 40px; height: 40px;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="member-empty" id="memberEmpty">Tidak ada anggota yang cocok dengan pencarian ini.</div>
+
+        <div class="bulk-bar" id="bulkBar">
+            <span style="font-weight: 700; color: var(--md-sys-color-primary); font-size: 0.9rem;"><span id="selCount">0</span> Dipilih</span>
+            <div style="flex: 1; display: flex; gap: 4px; justify-content: center;">
+                <button type="button" onclick="doBulk('activate')" class="btn btn-icon" style="color: #2E7D32;" title="Aktifkan"><span class="material-symbols-outlined">check_circle</span></button>
+                <button type="button" onclick="doBulk('suspend')" class="btn btn-icon" style="color: #EF6C00;" title="Tangguhkan"><span class="material-symbols-outlined">block</span></button>
+                <button type="button" onclick="doBulk('delete')" class="btn btn-icon" style="color: var(--md-sys-color-error);" title="Hapus"><span class="material-symbols-outlined">delete</span></button>
+            </div>
+            <button type="button" onclick="clearSel()" class="btn btn-icon"><span class="material-symbols-outlined">close</span></button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function filterMembers() {
+        const query = document.getElementById('memberSearch').value.toLowerCase();
+        const fClass = document.getElementById('filterClass').value.toLowerCase();
+        const fRole = document.getElementById('filterRole').value.toLowerCase();
+        const fStatus = document.getElementById('filterStatus').value;
+        
+        const items = document.querySelectorAll('.member-item');
+        
+        let visibleCount = 0;
+        items.forEach(item => {
+            const name = item.dataset.name;
+            const mClass = item.dataset.class;
+            const role = item.dataset.role;
+            const status = item.dataset.status;
+            
+            const matchesQuery = name.includes(query) || mClass.includes(query) || role.includes(query);
+            const matchesClass = fClass === 'all' || mClass === fClass;
+            const matchesRole = fRole === 'all' || role === fRole;
+            const matchesStatus = fStatus === 'all' || status === fStatus;
+            
+            const visible = matchesQuery && matchesClass && matchesRole && matchesStatus;
+            item.style.display = visible ? 'grid' : 'none';
+            if (visible) visibleCount += 1;
+        });
+        document.getElementById('memberEmpty').style.display = visibleCount ? 'none' : 'block';
+    }
+
+    function toggleSelect(el) {
+        el.classList.toggle('checked');
+        const checkbox = el.querySelector('input');
+        checkbox.checked = el.classList.contains('checked');
+        updateBulk();
+    }
+
+    function updateBulk() {
+        const count = document.querySelectorAll('.member-check.checked').length;
+        const bar = document.getElementById('bulkBar');
+        document.getElementById('selCount').textContent = count;
+        bar.style.display = count > 0 ? 'flex' : 'none';
+    }
+
+    function clearSel() {
+        document.querySelectorAll('.member-check.checked').forEach(el => {
+            el.classList.remove('checked');
+            el.querySelector('input').checked = false;
+        });
+        updateBulk();
+    }
+
+    function doBulk(action) {
+        if (confirm(`Terapkan aksi '${action}' pada anggota terpilih?`)) {
+            document.getElementById('bulkActionInput').value = action;
+            document.getElementById('bulkForm').submit();
+        }
+    }
+
+    function deleteMember(button) {
+        const { userId, userName: name, userRole: role } = button.dataset;
+        const label = ['Owner', 'Admin', 'Super Admin', 'Moderator'].includes(role) ? 'akun administrator' : 'akun anggota';
+        if (!confirm(`Hapus ${label} ${name} beserta data pribadinya? Tindakan ini tidak dapat dibatalkan.`)) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/users/delete/${userId}`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function exportData() { window.location.href = "{{ url_for('admin.export_users') }}"; }
+</script>
+{% endblock %}

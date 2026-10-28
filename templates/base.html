@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ config.APP_NAME }}</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4f56a9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/paskiblogo.jpg') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css', v=config.VERSION) }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+    <style>
+        :root {
+            --header-height: 64px;
+            --sidebar-width: 264px;
+        }
+
+        body {
+            background-color: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .sidebar {
+            background: var(--md-sys-color-surface-container);
+        }
+
+        .top-app-bar {
+            background: var(--md-sys-color-surface);
+        }
+
+        .card {
+            background: var(--md-sys-color-surface-container-high);
+        }
+
+        /* Compact Mode */
+        body.compact-mode {
+            --header-height: 56px;
+            font-size: 0.9rem;
+        }
+        body.compact-mode .card { padding: 16px; margin-bottom: 12px; }
+        body.compact-mode .sidebar-item { padding: 8px 12px; margin-bottom: 2px; }
+
+        /* Notifications Overlay (Dense) */
+        .notification-panel {
+            position: fixed;
+            top: 72px;
+            right: 16px;
+            width: 320px;
+            max-width: calc(100vw - 32px);
+            background: var(--md-sys-color-surface-container-highest, #36343B);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            box-shadow: var(--elevation-4);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            overflow: hidden;
+            animation: slideUp 0.2s ease-out;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        body:not(.dark-theme) .notification-panel {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        body.compact-mode .notification-panel { top: 64px; }
+
+        .notification-header {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            background: var(--md-sys-color-surface-container-high);
+        }
+
+        .notification-list { max-height: 360px; overflow-y: auto; }
+
+        .notification-item {
+            padding: 12px 16px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            transition: background 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .notification-item:hover { background: var(--md-sys-color-surface-variant); }
+        .notification-item.unread { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+
+        .notification-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--md-sys-color-primary);
+            flex-shrink: 0; margin-top: 6px;
+        }
+
+        .notification-badge {
+            position: absolute; top: 4px; right: 4px;
+            background: var(--md-sys-color-error); color: white;
+            font-size: 0.6rem; font-weight: 800;
+            min-width: 16px; height: 16px; border-radius: 8px;
+            display: none; align-items: center; justify-content: center;
+            padding: 0 4px; border: 1.5px solid var(--md-sys-color-surface);
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+{% set p = session.prefs if session.prefs else {} %}
+<body class="fade-in 
+    {% if p.dark_mode %}dark-theme{% endif %} 
+    {% if p.compact_mode %}compact-mode{% endif %}
+    {% if p.experimental_layout %}experimental-layout{% endif %}
+    {% if p.advanced_animations %}advanced-animations{% endif %}
+    {% if p.debug_layout %}debug-layout{% endif %}
+    layout-{{ p.device_mode if p.device_mode else 'auto' }}
+">
+    {% if session.user_id %}
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="{{ url_for('static', filename='img/paskiblogo.jpg') }}" alt="Logo" class="sidebar-logo">
+            <div class="sidebar-brand-wrap">
+                <div class="sidebar-brand">PASKIBRA V2</div>
+            </div>
+            <button class="btn-icon mobile-only" id="sidebar-close" style="margin-left: auto;" title="Tutup menu" aria-label="Tutup menu">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="sidebar-section-label">Menu Utama</div>
+            <a href="{{ url_for('dashboard.index') }}" class="sidebar-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}" data-tooltip="Beranda">
+                <span class="material-symbols-outlined">home</span>
+                <span class="sidebar-label">Beranda</span>
+            </a>
+            <a href="{{ url_for('profile.view') }}" class="sidebar-item {% if request.endpoint == 'profile.view' %}active{% endif %}" data-tooltip="Profil Saya">
+                <span class="material-symbols-outlined">account_circle</span>
+                <span class="sidebar-label">Profil Saya</span>
+            </a>
+            <a href="{{ url_for('notifications.index') }}" class="sidebar-item {% if request.endpoint == 'notifications.index' %}active{% endif %}" data-tooltip="Notifikasi">
+                <span class="material-symbols-outlined">notifications</span>
+                <span class="sidebar-label">Notifikasi</span>
+                <div id="sidebar-notif-badge" class="badge-dot" style="display: none; margin-left: auto; width: 8px; height: 8px; background: var(--md-sys-color-error); border-radius: 50%;"></div>
+            </a>
+            <a href="{{ url_for('attendance.index') }}" class="sidebar-item {% if request.endpoint and 'attendance' in request.endpoint %}active{% endif %}" data-tooltip="Absensi">
+                <span class="material-symbols-outlined">fact_check</span>
+                <span class="sidebar-label">Absensi</span>
+            </a>
+            <a href="{{ url_for('schedule.list') }}" class="sidebar-item {% if request.endpoint and 'schedule' in request.endpoint %}active{% endif %}" data-tooltip="Jadwal">
+                <span class="material-symbols-outlined">event</span>
+                <span class="sidebar-label">Jadwal</span>
+            </a>
+            <a href="{{ url_for('members.list') }}" class="sidebar-item {% if request.endpoint and 'members' in request.endpoint %}active{% endif %}" data-tooltip="Daftar Anggota">
+                <span class="material-symbols-outlined">groups</span>
+                <span class="sidebar-label">Daftar Anggota</span>
+            </a>
+            <div class="sidebar-section-label">Informasi</div>
+            <a href="{{ url_for('dashboard.announcements') }}" class="sidebar-item {% if request.endpoint == 'dashboard.announcements' %}active{% endif %}" data-tooltip="Pengumuman">
+                <span class="material-symbols-outlined">campaign</span>
+                <span class="sidebar-label">Pengumuman</span>
+            </a>
+            <a href="{{ url_for('dashboard.credits') }}" class="sidebar-item {% if request.endpoint == 'dashboard.credits' %}active{% endif %}" data-tooltip="Kredit">
+                <span class="material-symbols-outlined">code</span>
+                <span class="sidebar-label">Kredit</span>
+            </a>
+
+            {% if session.get('role') in ['Owner', 'Admin', 'Super Admin', 'Moderator'] %}
+            <div class="sidebar-section-label">Admin Panel</div>
+            <a href="{{ url_for('admin.dashboard') }}" class="sidebar-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" data-tooltip="Dashboard Admin">
+                <span class="material-symbols-outlined">dashboard_customize</span>
+                <span class="sidebar-label">Dashboard Admin</span>
+            </a>
+            <a href="{{ url_for('admin.users') }}" class="sidebar-item {% if request.endpoint == 'admin.users' %}active{% endif %}" data-tooltip="Manajemen Anggota">
+                <span class="material-symbols-outlined">manage_accounts</span>
+                <span class="sidebar-label">Manajemen Anggota</span>
+            </a>
+            <a href="{{ url_for('admin.announcements') }}" class="sidebar-item {% if request.endpoint == 'admin.announcements' %}active{% endif %}" data-tooltip="Announcement">
+                <span class="material-symbols-outlined">campaign</span>
+                <span class="sidebar-label">Kelola Pengumuman</span>
+            </a>
+            <a href="{{ url_for('admin.pending') }}" class="sidebar-item {% if request.endpoint == 'admin.pending' %}active{% endif %}" data-tooltip="Persetujuan Akun">
+                <span class="material-symbols-outlined">person_check</span>
+                <span class="sidebar-label">Persetujuan Akun</span>
+            </a>
+            <a href="{{ url_for('admin.attendance') }}" class="sidebar-item {% if request.endpoint == 'admin.attendance' %}active{% endif %}" data-tooltip="Rekap Absensi">
+                <span class="material-symbols-outlined">fact_check</span>
+                <span class="sidebar-label">Rekap Absensi</span>
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="{{ url_for('profile.settings') }}" class="sidebar-item {% if request.endpoint and 'settings' in request.endpoint %}active{% endif %}" data-tooltip="Pengaturan">
+                <span class="material-symbols-outlined">settings</span>
+                <span class="sidebar-label">Pengaturan</span>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-item" style="color: var(--md-sys-color-error);" data-tooltip="Keluar">
+                <span class="material-symbols-outlined">logout</span>
+                <span class="sidebar-label">Keluar</span>
+            </a>
+        </div>
+    </aside>
+
+    <header class="top-app-bar">
+        <div class="header-left">
+            <button class="btn-icon mobile-only" id="menu-toggle" title="Buka menu" aria-label="Buka menu">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <button class="btn-icon desktop-only" id="sidebar-toggle-desktop" title="Ciutkan atau lebarkan menu" aria-label="Ciutkan atau lebarkan menu">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <div class="header-title">
+                {% block title_bar %}{{ config.APP_NAME }}{% endblock %}
+            </div>
+        </div>
+
+        <div class="header-right">
+            {% if session.get('role') in ['Owner', 'Admin', 'Super Admin', 'Moderator'] %}
+            <a href="{{ url_for('attendance.scanner') }}" class="btn-icon desktop-only" title="Pindai QR">
+                <span class="material-symbols-outlined">qr_code_scanner</span>
+            </a>
+            {% endif %}
+            
+            <button class="btn-icon theme-toggle" id="theme-toggle" title="Ganti tema" aria-label="Aktifkan tema gelap" aria-pressed="{% if p.dark_mode %}true{% else %}false{% endif %}">
+                <span class="material-symbols-outlined sun-icon">light_mode</span>
+                <span class="material-symbols-outlined moon-icon">dark_mode</span>
+            </button>
+
+            <div style="position: relative;">
+                <button class="btn-icon" id="notif-toggle" title="Notifikasi" aria-label="Notifikasi">
+                    <span class="material-symbols-outlined">notifications</span>
+                    <div id="notif-badge" class="notification-badge">0</div>
+                </button>
+                <div class="notification-panel" id="notif-panel">
+                    <div class="notification-header">
+                        <span style="font-weight: 800; font-size: 0.9rem;">Notifikasi</span>
+                        <button onclick="markAllRead()" style="border: none; background: none; color: var(--md-sys-color-primary); font-size: 0.75rem; font-weight: 700; cursor: pointer;">Baca Semua</button>
+                    </div>
+                    <div class="notification-list" id="notif-list"></div>
+                </div>
+            </div>
+
+            <a href="{{ url_for('profile.view') }}" class="header-profile-link" aria-label="Buka profil">
+                <div class="header-avatar">
+                    {% if session.avatar and session.avatar != 'default_avatar.png' %}
+                        <img src="{{ url_for('media_avatar', filename=session.avatar) }}" style="width:100%; height:100%; object-fit:cover;" alt="">
+                    {% else %}
+                        <span class="material-symbols-outlined" style="color: var(--md-sys-color-primary); font-size: 20px;">account_circle</span>
+                    {% endif %}
+                </div>
+                <span class="header-profile-meta">
+                    <strong>{{ session.get('full_name', 'Anggota') }}</strong>
+                    <small>{{ session.get('role', 'Anggota') }}</small>
+                </span>
+            </a>
+        </div>
+    </header>
+    {% endif %}
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash-message flash-message-{{ category }} slide-up" role="status" aria-live="polite">
+                <div class="flash-message-content">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">{% if category == 'success' %}check_circle{% elif category == 'danger' %}error{% else %}info{% endif %}</span>
+                    <span style="font-weight: 600; font-size: 0.9rem;">{{ message }}</span>
+                </div>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if session.user_id %}
+    <nav class="bottom-nav mobile-only">
+        {% set nav_items = [
+            {'id': 'home', 'url': url_for('dashboard.index'), 'icon': 'home', 'label': 'Beranda'},
+            {'id': 'attendance', 'url': url_for('attendance.index'), 'icon': 'fact_check', 'label': 'Absensi'},
+            {'id': 'schedule', 'url': url_for('schedule.list'), 'icon': 'event', 'label': 'Jadwal'},
+            {'id': 'members', 'url': url_for('members.list'), 'icon': 'groups', 'label': 'Anggota'},
+            {'id': 'profile', 'url': url_for('profile.view'), 'icon': 'account_circle', 'label': 'Profil'}
+        ] %}
+        
+        {% set user_nav = (p.bottom_nav if p.bottom_nav else ['home', 'attendance', 'schedule', 'members', 'profile'])|reject('equalto', 'forum')|list %}
+        {% if not user_nav %}{% set user_nav = ['home', 'attendance', 'schedule', 'profile'] %}{% endif %}
+        {% set user_nav = user_nav[:5] %}
+        
+        {% for item_id in user_nav %}
+            {% for nav in nav_items %}
+                {% if nav.id == item_id %}
+                <a href="{{ nav.url }}" class="nav-item {% if request.path == nav.url %}active{% endif %}" data-id="{{ nav.id }}">
+                    <div class="nav-indicator">
+                        <span class="material-symbols-outlined">{{ nav.icon }}</span>
+                    </div>
+                    <span>{{ nav.label }}</span>
+                </a>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+    </nav>
+    {% endif %}
+
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebarClose = document.getElementById('sidebar-close');
+        const sidebarToggleDesktop = document.getElementById('sidebar-toggle-desktop');
+
+        // One-time migration: expand the old icon-only default after the nav refresh.
+        if (!localStorage.getItem('sidebar-expanded-default-v1')) {
+            localStorage.removeItem('sidebar-collapsed');
+            localStorage.setItem('sidebar-expanded-default-v1', 'true');
+        }
+
+        // Restore the user's sidebar state after the one-time migration.
+        if (localStorage.getItem('sidebar-collapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+
+        if (menuToggle) {
+            menuToggle.onclick = () => {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            };
+        }
+
+        if (sidebarToggleDesktop) {
+            sidebarToggleDesktop.onclick = () => {
+                document.body.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('sidebar-collapsed', document.body.classList.contains('sidebar-collapsed'));
+            };
+        }
+
+        if (sidebarClose) {
+            sidebarClose.onclick = () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            };
+        }
+
+        if (overlay) {
+            overlay.onclick = () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            };
+        }
+
+        // Keep the theme control's state and accessible label in sync with the page.
+        const themeToggle = document.getElementById('theme-toggle');
+        const syncThemeControl = () => {
+            const dark = document.body.classList.contains('dark-theme');
+            if (themeToggle) {
+                themeToggle.setAttribute('aria-pressed', String(dark));
+                themeToggle.setAttribute('aria-label', dark ? 'Aktifkan tema terang' : 'Aktifkan tema gelap');
+                themeToggle.title = dark ? 'Ganti ke tema terang' : 'Ganti ke tema gelap';
+            }
+            const themeColor = document.querySelector('meta[name="theme-color"]');
+            if (themeColor) themeColor.content = dark ? '#101116' : '#4f56a9';
+        };
+        syncThemeControl();
+        if (themeToggle) {
+            themeToggle.onclick = async () => {
+                if (themeToggle.disabled) return;
+                themeToggle.disabled = true;
+                const previous = document.body.classList.contains('dark-theme');
+                document.body.classList.toggle('dark-theme', !previous);
+                syncThemeControl();
+                try {
+                    const response = await fetch('/profile/toggle-theme', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (!response.ok) throw new Error('Theme preference could not be saved');
+                    const result = await response.json();
+                    document.body.classList.toggle('dark-theme', Boolean(result.dark_mode));
+                } catch (err) {
+                    document.body.classList.toggle('dark-theme', previous);
+                    console.error('Failed to save theme preference');
+                } finally {
+                    themeToggle.disabled = false;
+                    syncThemeControl();
+                }
+            };
+        }
+
+        // Notification logic
+        const notifToggle = document.getElementById('notif-toggle');
+        const notifPanel = document.getElementById('notif-panel');
+        const notifBadge = document.getElementById('notif-badge');
+        const notifList = document.getElementById('notif-list');
+
+        if (notifToggle) {
+            notifToggle.onclick = (e) => {
+                e.stopPropagation();
+                const isShowing = notifPanel.style.display === 'flex';
+                notifPanel.style.display = isShowing ? 'none' : 'flex';
+                if (!isShowing) fetchNotifications();
+            };
+        }
+
+        document.addEventListener('click', (e) => {
+            if (notifPanel && !notifPanel.contains(e.target) && e.target !== notifToggle) {
+                notifPanel.style.display = 'none';
+            }
+        });
+async function updateBadge() {
+    try {
+        const res = await fetch('/notifications/unread-count');
+        const data = await res.json();
+        if (data.count > 0) {
+            notifBadge.style.display = 'flex';
+            notifBadge.textContent = data.count > 99 ? '99' : data.count;
+            const sidebarBadge = document.getElementById('sidebar-notif-badge');
+            if (sidebarBadge) sidebarBadge.style.display = 'block';
+        } else {
+            notifBadge.style.display = 'none';
+            const sidebarBadge = document.getElementById('sidebar-notif-badge');
+            if (sidebarBadge) sidebarBadge.style.display = 'none';
+        }
+    } catch (err) {}
+}
+
+// Push Notification Logic
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+}
+
+async function subscribeToPush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        throw new Error('Browser ini tidak mendukung notifikasi push.');
+    }
+    const keyResponse = await fetch('/notifications/public-key', { cache: 'no-store' });
+    const keyData = await keyResponse.json();
+    if (!keyResponse.ok || !keyData.publicKey) {
+        throw new Error(keyData.message || 'Kunci notifikasi tidak tersedia.');
+    }
+
+    await navigator.serviceWorker.register('/sw.js');
+    const readyRegistration = await navigator.serviceWorker.ready;
+    let subscription = await readyRegistration.pushManager.getSubscription();
+    const expectedKey = urlBase64ToUint8Array(keyData.publicKey);
+    if (subscription) {
+        const currentKey = subscription.options?.applicationServerKey;
+        const currentBytes = currentKey ? new Uint8Array(currentKey) : null;
+        const keyMatches = currentBytes && currentBytes.length === expectedKey.length &&
+            currentBytes.every((value, index) => value === expectedKey[index]);
+        if (!keyMatches) {
+            const previousSubscription = subscription.toJSON();
+            await subscription.unsubscribe();
+            await fetch('/notifications/unsubscribe', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(previousSubscription)
+            });
+            subscription = null;
+        }
+    }
+
+    if (!subscription) {
+        subscription = await readyRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: expectedKey
+        });
+    }
+
+    const saveResponse = await fetch('/notifications/subscribe', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(subscription)
+    });
+    const saved = await saveResponse.json();
+    if (!saveResponse.ok || saved.status !== 'success') {
+        throw new Error(saved.message || 'Perangkat gagal didaftarkan.');
+    }
+    return subscription;
+}
+
+// Let the page paint before making the first background request.
+if (notifBadge) {
+    const scheduleBadgeUpdate = window.requestIdleCallback || ((callback) => setTimeout(callback, 900));
+    scheduleBadgeUpdate(() => { if (!document.hidden) updateBadge(); }, { timeout: 1800 });
+}
+let badgeTimer;
+document.addEventListener('visibilitychange', () => {
+    clearInterval(badgeTimer);
+    if (!document.hidden && notifBadge) {
+        updateBadge();
+        badgeTimer = setInterval(updateBadge, 60000);
+    }
+});
+if (!document.hidden && notifBadge) badgeTimer = setTimeout(() => {
+    clearInterval(badgeTimer);
+    badgeTimer = setInterval(updateBadge, 60000);
+}, 60000);
+
+        async function fetchNotifications() {
+            try {
+                const res = await fetch('/notifications/');
+                const data = await res.json();
+                notifList.innerHTML = '';
+                if (data.length === 0) {
+                    notifList.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--md-sys-color-outline);"><p style="font-size: 0.8rem;">Tidak ada notifikasi</p></div>';
+                    return;
+                }
+                data.forEach(n => {
+                    const item = document.createElement('div');
+                    item.className = `notification-item ${n.is_read ? '' : 'unread'}`;
+                    item.onclick = (e) => {
+                        e.preventDefault();
+                        handleNotifClick(n.id, n.url);
+                    };
+                    item.innerHTML = `
+                        <div class="notification-dot" style="visibility: ${n.is_read ? 'hidden' : 'visible'}"></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; font-size: 0.85rem;">${n.title}</div>
+                            <div style="font-size: 0.75rem; opacity: 0.8;">${n.message}</div>
+                            <div style="font-size: 0.65rem; opacity: 0.5; margin-top: 4px;">${new Date(n.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        </div>
+                    `;
+                    notifList.appendChild(item);
+                });
+            } catch (err) {}
+        }
+
+        async function clearSiteCache() {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (let registration of registrations) {
+                    await registration.unregister();
+                }
+            }
+            const cacheNames = await caches.keys();
+            for (let name of cacheNames) {
+                await caches.delete(name);
+            }
+            alert('Cache berhasil dibersihkan. Halaman akan dimuat ulang.');
+            window.location.reload(true);
+        }
+
+async function handleNotifClick(id, url) {
+    await markRead(id);
+    if (url) window.location.href = url;
+    else fetchNotifications();
+}
+
+        async function markRead(id) {
+            await fetch('/notifications/mark-read', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: id})
+            });
+            updateBadge();
+            fetchNotifications();
+        }
+
+        async function markAllRead() {
+            await fetch('/notifications/mark-read', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: null})
+            });
+            updateBadge();
+            fetchNotifications();
+        }
+
+        async function clearAllNotifications() {
+            if (confirm('Hapus semua riwayat?')) {
+                await fetch('/notifications/clear', { method: 'POST' });
+                updateBadge();
+                fetchNotifications();
+            }
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

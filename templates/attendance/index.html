@@ -1,0 +1,701 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Absensi{% endblock %}
+
+{% block head %}
+<style>
+    /* Layout & Containers */
+    .absensi-page {
+        max-width: 1440px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .attendance-hero {
+        background: var(--md-sys-color-surface) !important;
+        color: var(--md-sys-color-on-surface) !important;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        box-shadow: none !important;
+    }
+    .attendance-hero { padding:clamp(18px,3vw,28px) !important; border-radius:20px !important; }
+    .attendance-hero h1 { font-size:clamp(1.45rem,3vw,1.9rem) !important; font-weight:750 !important; letter-spacing:-.035em; }
+    .attendance-hero > div:first-child { align-items:center !important; }
+    .attendance-hero #personal-qr-panel { border-color: var(--md-sys-color-outline-variant) !important; }
+    .attendance-hero #personal-qr-panel p { color: var(--md-sys-color-on-surface-variant); opacity: 1 !important; }
+    .attendance-hero .attendance-qr-toggle { background: var(--md-sys-color-surface-container-high) !important; color: var(--md-sys-color-primary) !important; }
+    .absensi-page,.filter-bar { min-width:0; }
+    .absensi-table-container { max-width:100%; overflow-x:auto !important; }
+    .absensi-table { width:100% !important; min-width:0 !important; table-layout:fixed; }
+    .attendance-history { grid-template-columns:repeat(7,minmax(0,1fr)); gap:clamp(5px,2vw,14px); }
+
+    /* Top Summary Section */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    @media (min-width: 1024px) { .summary-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+
+    .summary-card {
+        background: var(--md-sys-color-surface-container-low);
+        padding: 14px 12px;
+        border-radius: 14px;
+        text-align: center;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+        cursor: pointer;
+        color: var(--md-sys-color-on-surface);
+        font: inherit;
+        appearance: none;
+    }
+
+    .summary-card.active {
+        border-color: var(--md-sys-color-primary);
+        background: var(--md-sys-color-primary-container);
+    }
+
+    .summary-card .count {
+        font-size: 1.5rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .summary-card .label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--md-sys-color-outline);
+    }
+    .summary-card:hover { border-color: var(--md-sys-color-primary); transform: translateY(-1px); }
+    .summary-card:focus-visible, .chip:focus-visible, .action-btn:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 2px; }
+
+    .status-hadir { color: #2E7D32; }
+    .status-izin { color: #E65100; }
+    .status-sakit { color: #1565C0; }
+    .status-alpha { color: #C62828; }
+
+    /* Search & Filter Bar */
+    .filter-bar {
+        position: sticky;
+        top: 72px;
+        z-index: 90;
+        background: var(--md-sys-color-surface);
+        padding: 8px 0 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .search-field {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-field input {
+        width: 100%;
+        height: 48px;
+        padding: 0 16px 0 48px;
+        border-radius: 12px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        background: var(--md-sys-color-surface-container-high);
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .search-field input:focus {
+        outline: none;
+        border-color: var(--md-sys-color-primary);
+        background: var(--md-sys-color-surface);
+        box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+    }
+
+    .search-field .material-symbols-outlined {
+        position: absolute;
+        left: 16px;
+        color: var(--md-sys-color-outline);
+    }
+
+    .filter-chips {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+
+    .filter-chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+        padding: 7px 13px;
+        border-radius: 10px;
+        background: var(--md-sys-color-surface-container-high);
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.85rem;
+        font-weight: 500;
+        white-space: nowrap;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        cursor: pointer;
+        transition: all 0.2s;
+        font: inherit;
+    }
+
+    .chip.active {
+        background: var(--md-sys-color-secondary-container);
+        color: var(--md-sys-color-on-secondary-container);
+        border-color: var(--md-sys-color-primary);
+    }
+
+    /* Member List */
+    .member-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .member-card {
+        background: var(--md-sys-color-surface-container-low);
+        border-radius: 14px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        transition: all 0.2s;
+    }
+
+    .member-card:active {
+        background: var(--md-sys-color-surface-container);
+    }
+
+    .member-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-m);
+        overflow: hidden;
+        background: var(--md-sys-color-surface-variant);
+        flex-shrink: 0;
+    }
+
+    .member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .member-avatar .material-symbols-outlined { font-size: 32px; color: var(--md-sys-color-outline); }
+
+    .member-info { flex: 1; min-width: 0; }
+    .member-name { font-weight: 700; font-size: 1rem; color: var(--md-sys-color-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .member-sub { font-size: 0.75rem; color: var(--md-sys-color-outline); }
+
+    .member-status-badge {
+        padding: 4px 10px;
+        border-radius: var(--radius-s);
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .badge-hadir { background: #E8F5E9; color: #1B5E20; }
+    .badge-izin { background: #FFF3E0; color: #E65100; }
+    .badge-sakit { background: #E3F2FD; color: #0D47A1; }
+    .badge-alpha { background: #FFEBEE; color: #B71C1C; }
+    .badge-none { background: var(--md-sys-color-surface-variant); color: var(--md-sys-color-on-surface-variant); }
+
+    /* Quick Action Buttons */
+    .action-group {
+        display: flex;
+        gap: 4px;
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        background: var(--md-sys-color-surface);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.1s;
+    }
+
+    .action-btn:active { transform: scale(0.9); }
+    .action-btn.active { border-width: 2px; }
+
+    .btn-h.active { background: #2E7D32; color: white; border-color: #1B5E20; }
+    .btn-i.active { background: #E65100; color: white; border-color: #BF360C; }
+    .btn-s.active { background: #1565C0; color: white; border-color: #0D47A1; }
+    .btn-a.active { background: #C62828; color: white; border-color: #8E0000; }
+
+    /* Floating Action Button */
+    .fab-scanner {
+        position: fixed;
+        bottom: 100px;
+        right: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-xl);
+        background: var(--md-sys-color-primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--elevation-3);
+        z-index: 100;
+        text-decoration: none;
+        transition: transform 0.2s;
+    }
+
+    .fab-scanner:active { transform: scale(0.9); }
+
+    /* Admin Controls Card */
+    .admin-controls {
+        background: var(--md-sys-color-surface-container-high);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        border-radius: 16px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .attendance-history { display: grid; grid-template-columns: repeat(7, minmax(28px, 1fr)); gap: 10px; align-items: end; min-height: 150px; }
+    .attendance-day { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 7px; min-width: 0; height: 150px; color: var(--md-sys-color-on-surface-variant); font-size: .72rem; }
+    .attendance-day-count { font-size: .72rem; font-weight: 650; }
+    .attendance-day-track { display: flex; width: min(100%, 38px); height: 100px; align-items: flex-end; overflow: hidden; border-radius: 8px; background: var(--md-sys-color-surface-container); }
+    .attendance-day-bar { width: 100%; min-height: 4px; border-radius: 8px; background: var(--md-sys-color-primary); }
+    .attendance-chart-card { padding: 20px; }
+
+    body.dark-theme .badge-hadir, body.dark-theme .btn-h.active { background: #24412d; color: #b9e9c4; border-color: #376a45; }
+    body.dark-theme .badge-izin, body.dark-theme .btn-i.active { background: #4d341d; color: #ffd3a2; border-color: #805527; }
+    body.dark-theme .badge-sakit, body.dark-theme .btn-s.active { background: #1e344b; color: #bedcff; border-color: #355a80; }
+    body.dark-theme .badge-alpha, body.dark-theme .btn-a.active { background: #4a2427; color: #ffc1c3; border-color: #78383d; }
+
+    @media (max-width: 700px) {
+        .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .filter-bar { top: calc(var(--header-height) + 4px); }
+        .member-card { align-items: flex-start; flex-wrap: wrap; }
+        .member-card > div:last-child { width: 100%; flex-direction: row !important; align-items: center !important; justify-content: space-between; }
+        .member-card .member-info { flex-basis: calc(100% - 72px); }
+        .admin-controls > div { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 420px) {
+        .attendance-hero { padding: 16px !important; }
+        .attendance-day { font-size: .65rem; }
+        .attendance-chart-card { padding: 16px; }
+        .summary-grid { gap:8px; }
+        .summary-card { padding:12px 8px; }
+        .filter-chips { margin-inline:-4px; padding-inline:4px; }
+        .member-card { gap:9px; }
+    }
+
+    /* Mobile First Adjustments */
+    @media (min-width: 769px) {
+        .filter-bar { top: 80px; }
+        .fab-scanner { bottom: 32px; right: 32px; width: auto; padding: 0 24px; border-radius: 16px; gap: 12px; }
+        .fab-scanner .material-symbols-outlined { font-size:24px; }
+    }
+
+    /* Attendance refresh */
+    .attendance-hero { position:relative; overflow:hidden; display:block; }
+    .attendance-hero:before { content:""; position:absolute; width:190px; height:190px; right:76px; top:-130px; border-radius:50%; background:var(--md-sys-color-primary-container); opacity:.45; pointer-events:none; }
+    .attendance-hero > div:first-child { position:relative; z-index:1; width:100%; }
+    .attendance-hero > div:first-child > div:first-child { color:var(--md-sys-color-outline); letter-spacing:.02em; }
+    .attendance-hero .attendance-qr-toggle { position:relative; z-index:1; flex:0 0 48px; width:48px; height:48px; border-radius:15px; }
+    .attendance-hero #personal-qr-panel { position:relative; z-index:1; }
+    .summary-card { min-height:100px; justify-content:center; border-radius:16px; text-align:left; padding:16px 18px; }
+    .summary-card .count { font-size:1.8rem; }
+    .summary-card .label { font-size:.72rem; letter-spacing:.04em; }
+    .summary-card.active { box-shadow:inset 0 0 0 1px var(--md-sys-color-primary); }
+    .filter-bar { border-bottom:1px solid var(--md-sys-color-outline-variant); }
+    .filter-chips { align-items:center; }
+    .chip { border-radius:999px; padding:9px 14px; }
+    .absensi-table-container { border-radius:16px !important; }
+    .absensi-table { width:100%; min-width:0; table-layout:fixed; }
+    .absensi-table th { position:sticky; top:0; z-index:1; }
+    .absensi-table th:nth-child(1),.absensi-table td:nth-child(1) { width:33%; }
+    .absensi-table th:nth-child(2),.absensi-table td:nth-child(2) { width:8%; }
+    .absensi-table th:nth-child(3),.absensi-table td:nth-child(3) { width:14%; }
+    .absensi-table th:nth-child(4),.absensi-table td:nth-child(4) { width:12%; }
+    .absensi-table th:nth-child(5),.absensi-table td:nth-child(5) { width:33%; }
+    .absensi-table th,.absensi-table td { padding-inline:6px !important; }
+    .absensi-table td { white-space:nowrap; overflow:hidden; }
+    .absensi-table td:first-child > div { min-width:0; }
+    .absensi-table td:first-child > div > div:last-child { min-width:0; overflow:hidden; }
+    .absensi-table td:first-child > div > div:last-child > div:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .action-group { align-items:center; }
+    .action-group form { display:flex; }
+    .action-btn { flex:0 0 30px; width:30px; height:32px; border-radius:9px; }
+    .absensi-table .action-group { justify-content:flex-end; gap:3px; min-width:0; }
+    .attendance-chart-card { border:1px solid var(--md-sys-color-outline-variant); border-radius:18px; }
+    .admin-controls { margin-top:0 !important; }
+    @media(max-width:700px) {
+        .attendance-hero { align-items:flex-start; }
+        .summary-card { min-height:82px; }
+        .filter-bar { position:relative; top:auto !important; }
+        .member-list { gap:9px; }
+        .member-card { border-radius:15px; padding:13px; }
+        .member-card > div:last-child { width:100%; flex-direction:column !important; align-items:flex-start !important; }
+        .member-card .member-status-badge { align-self:flex-start; }
+        .member-card .action-group { width:100%; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
+        .member-card .action-group form,.member-card .action-btn { width:100%; }
+        .member-card .action-btn { height:40px; }
+        .fab-scanner { bottom:calc(92px + env(safe-area-inset-bottom)); right:16px; }
+    }
+    @media(max-width:420px) {
+        .attendance-hero { padding:16px !important; }
+        .summary-card .count { font-size:1.55rem; }
+        .summary-card .label { font-size:.66rem; }
+        .attendance-history { min-height:130px; }
+        .attendance-day { height:130px; }
+        .attendance-day-track { height:80px; }
+    }
+    .attendance-page-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin:0 0 -4px; }
+    .attendance-page-heading h1 { margin:0; font-size:clamp(1.55rem,2.6vw,2rem); font-weight:720; letter-spacing:-.04em; }
+    .attendance-page-heading p { margin:5px 0 0; color:var(--md-sys-color-outline); font-size:.88rem; }
+    .attendance-overview { display:grid; grid-template-columns:minmax(260px,.82fr) minmax(0,1.75fr); gap:12px; align-items:stretch; }
+    .attendance-hero { min-height:132px; display:flex; align-items:center; }
+    .attendance-hero > div:first-child { align-items:center !important; }
+    .attendance-hero h1 { font-size:1.22rem !important; letter-spacing:-.025em !important; }
+    .attendance-hero > div:first-child > div:first-child { font-size:.74rem !important; margin-bottom:5px !important; }
+    .attendance-hero > div:first-child > div:first-child > div:last-child { margin-top:9px !important; }
+    .attendance-overview .summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); height:100%; gap:10px; margin:0; }
+    .attendance-overview .summary-card { min-height:0; padding:14px 18px; text-align:left; border-radius:16px; background:var(--md-sys-color-surface); }
+    .attendance-overview .summary-card .count { font-size:1.55rem; }
+    .attendance-overview .summary-card .label { color:var(--md-sys-color-outline); font-size:.68rem; }
+    .filter-bar { padding:10px 0; }
+    .absensi-table-container { margin-top:0 !important; background:var(--md-sys-color-surface) !important; }
+    .absensi-table th { background:var(--md-sys-color-surface-container-low) !important; }
+    .absensi-table tbody tr { height:64px; }
+    .member-status-badge { border-radius:999px; }
+    .attendance-chart-card { margin-top:0 !important; }
+    @media(max-width:700px) {
+        .attendance-overview { grid-template-columns:1fr; }
+        .attendance-hero { min-height:112px; }
+        .attendance-overview .summary-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+        .attendance-overview .summary-card { padding:12px 10px; }
+        .attendance-page-heading { align-items:flex-start; flex-direction:column; gap:4px; }
+    }
+    @media(max-width:420px) {
+        .attendance-overview .summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        .attendance-overview .summary-card { min-height:74px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="absensi-page fade-in">
+    <header class="attendance-page-heading">
+        <div><h1>Absensi</h1><p>Ringkasan hari ini dan catatan kehadiran anggota.</p></div>
+    </header>
+
+    <div class="attendance-overview {% if session.get('role') in ['Owner', 'Admin', 'Super Admin', 'Moderator'] %}has-admin-stats{% endif %}">
+    <!-- Member View (Always show their own status at top) -->
+    <div class="card attendance-hero" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-size: 0.8rem; font-weight: 500; opacity: 0.8; margin-bottom: 4px;">{{ now_date }}</div>
+                <h1 style="margin: 0; font-size: 1.5rem; font-weight: 700;">Presensi Saya</h1>
+                <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
+                    {% if today_status %}
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #81C784; box-shadow: 0 0 8px #81C784;"></div>
+                        <span style="font-weight: 700;">{{ today_status.status }}</span>
+                        <span style="opacity: 0.7; font-size: 0.8rem;">• {{ today_status.scan_time[11:16] }}</span>
+                    {% else %}
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #FFB74D; box-shadow: 0 0 8px #FFB74D;"></div>
+                        <span style="font-weight: 700;">Belum Absen</span>
+                    {% endif %}
+                </div>
+            </div>
+            <button onclick="toggleQR()" class="btn-icon attendance-qr-toggle" aria-controls="personal-qr-panel" aria-expanded="false" title="Tampilkan QR presensi">
+                <span class="material-symbols-outlined">qr_code_2</span>
+            </button>
+        </div>
+
+        <div id="personal-qr-panel" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); text-align: center;">
+            <div style="background: white; padding: 16px; border-radius: 20px; display: inline-block; margin-bottom: 12px;">
+                <img src="{{ qr_code }}" alt="QR presensi pribadi" style="width: 180px; height: 180px; display: block;">
+            </div>
+            <p style="font-size: 0.75rem; margin: 0; opacity: 0.9;">Tunjukkan QR ini ke petugas/admin untuk presensi.</p>
+        </div>
+    </div>
+
+    {% if session.get('role') in ['Owner', 'Admin', 'Super Admin', 'Moderator'] %}
+    <!-- Admin Summary Section -->
+    <div>
+        <div class="summary-grid" aria-label="Ringkasan presensi hari ini">
+            <button type="button" class="summary-card" onclick="setFilter('Hadir')" aria-label="Filter anggota hadir">
+                <span class="count status-hadir">{{ global_stats.hadir }}</span>
+                <span class="label">Hadir</span>
+            </button>
+            <button type="button" class="summary-card" onclick="setFilter('Izin')" aria-label="Filter anggota izin">
+                <span class="count status-izin">{{ global_stats.izin }}</span>
+                <span class="label">Izin</span>
+            </button>
+            <button type="button" class="summary-card" onclick="setFilter('Sakit')" aria-label="Filter anggota sakit">
+                <span class="count status-sakit">{{ global_stats.sakit }}</span>
+                <span class="label">Sakit</span>
+            </button>
+            <button type="button" class="summary-card" onclick="setFilter('Alpha')" aria-label="Filter anggota alpha">
+                <span class="count status-alpha">{{ global_stats.alpha }}</span>
+                <span class="label">Alpha</span>
+            </button>
+        </div>
+    </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="filter-bar">
+        <div class="search-field">
+            <span class="material-symbols-outlined">search</span>
+            <input type="search" id="memberSearch" placeholder="Cari nama anggota..." aria-label="Cari anggota" oninput="filterMembers()">
+        </div>
+        <div class="filter-chips">
+            <button type="button" class="chip active" aria-pressed="true" onclick="setFilter('all', this)">Semua ({{ global_stats.total_active }})</button>
+            <button type="button" class="chip" aria-pressed="false" onclick="setFilter('Belum Absen', this)">Belum Absen ({{ global_stats.belum_absen }})</button>
+            <button type="button" class="chip" aria-pressed="false" onclick="setFilter('Hadir', this)">Hadir</button>
+            <button type="button" class="chip" aria-pressed="false" onclick="setFilter('Izin', this)">Izin</button>
+            <button type="button" class="chip" aria-pressed="false" onclick="setFilter('Sakit', this)">Sakit</button>
+            <button type="button" class="chip" aria-pressed="false" onclick="setFilter('Alpha', this)">Alpha</button>
+        </div>
+    </div>
+
+    <!-- Member List (Mobile/Tablet View) -->
+    <div class="member-list mobile-only" id="memberList">
+        {% for member in members %}
+        <div class="member-card" data-name="{{ member.full_name.lower() }}" data-status="{{ member.today_status or 'Belum Absen' }}">
+            <div class="member-avatar">
+                {% if member.avatar and member.avatar != 'default_avatar.png' %}
+                    <img src="{{ url_for('media_avatar', filename=member.avatar) }}" loading="lazy" decoding="async" alt="">
+                {% else %}
+                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+                        <span class="material-symbols-outlined">person</span>
+                    </div>
+                {% endif %}
+            </div>
+            <a class="member-info" href="{{ url_for('attendance.member_detail', user_id=member.id) }}" style="cursor: pointer; color: inherit; text-decoration: none;">
+                <div class="member-name">{{ member.full_name }}</div>
+                <div class="member-sub">{{ member.class }} • {{ member.role }}</div>
+            </a>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                {% if member.today_status %}
+                    <div class="member-status-badge badge-{{ member.today_status.lower() }}">
+                        {{ member.today_status }}
+                    </div>
+                {% else %}
+                    <div class="member-status-badge badge-none">Belum Absen</div>
+                {% endif %}
+                
+                <div class="action-group">
+                    <form action="{{ url_for('attendance.mark') }}" method="POST">
+                        <input type="hidden" name="user_id" value="{{ member.id }}">
+                        <input type="hidden" name="status" value="Hadir">
+                        <button type="submit" class="action-btn btn-h {% if member.today_status == 'Hadir' %}active{% endif %}" title="Catat hadir" aria-label="Catat {{ member.full_name }} hadir">H</button>
+                    </form>
+                    <form action="{{ url_for('attendance.mark') }}" method="POST">
+                        <input type="hidden" name="user_id" value="{{ member.id }}">
+                        <input type="hidden" name="status" value="Izin">
+                        <button type="submit" class="action-btn btn-i {% if member.today_status == 'Izin' %}active{% endif %}" title="Catat izin" aria-label="Catat {{ member.full_name }} izin">I</button>
+                    </form>
+                    <form action="{{ url_for('attendance.mark') }}" method="POST">
+                        <input type="hidden" name="user_id" value="{{ member.id }}">
+                        <input type="hidden" name="status" value="Sakit">
+                        <button type="submit" class="action-btn btn-s {% if member.today_status == 'Sakit' %}active{% endif %}" title="Catat sakit" aria-label="Catat {{ member.full_name }} sakit">S</button>
+                    </form>
+                    <form action="{{ url_for('attendance.mark') }}" method="POST">
+                        <input type="hidden" name="user_id" value="{{ member.id }}">
+                        <input type="hidden" name="status" value="Alpha">
+                        <button type="submit" class="action-btn btn-a {% if member.today_status == 'Alpha' %}active{% endif %}" title="Catat alpha" aria-label="Catat {{ member.full_name }} alpha">A</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Member List (Desktop Table View) -->
+    <div class="absensi-table-container desktop-only">
+        <table class="absensi-table">
+            <thead>
+                <tr>
+                    <th>Anggota</th>
+                    <th>Kelas</th>
+                    <th>Status</th>
+                    <th>Waktu Scan</th>
+                    <th style="text-align: right;">Aksi Cepat</th>
+                </tr>
+            </thead>
+            <tbody id="memberTableBody">
+                {% for member in members %}
+                <tr class="member-row" data-name="{{ member.full_name.lower() }}" data-status="{{ member.today_status or 'Belum Absen' }}">
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="member-avatar" style="width: 40px; height: 40px;">
+                                {% if member.avatar and member.avatar != 'default_avatar.png' %}
+                                    <img src="{{ url_for('media_avatar', filename=member.avatar) }}" loading="lazy" decoding="async" alt="">
+                                {% else %}
+                                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+                                        <span class="material-symbols-outlined" style="font-size: 24px;">person</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; color: var(--md-sys-color-on-surface);">{{ member.full_name }}</div>
+                                <div style="font-size: 0.75rem; color: var(--md-sys-color-outline);">{{ member.role }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ member.class }}</td>
+                    <td>
+                        {% if member.today_status %}
+                            <div class="member-status-badge badge-{{ member.today_status.lower() }}" style="display: inline-block;">
+                                {{ member.today_status }}
+                            </div>
+                        {% else %}
+                            <div class="member-status-badge badge-none" style="display: inline-block;">Belum Absen</div>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.85rem; color: var(--md-sys-color-outline);">
+                        {{ member.today_time[11:16] if member.today_time else '-' }}
+                    </td>
+                    <td>
+                        <div class="action-group" style="justify-content: flex-end;">
+                            <form action="{{ url_for('attendance.mark') }}" method="POST">
+                                <input type="hidden" name="user_id" value="{{ member.id }}">
+                                <input type="hidden" name="status" value="Hadir">
+                                <button type="submit" class="action-btn btn-h {% if member.today_status == 'Hadir' %}active{% endif %}" title="Hadir">H</button>
+                            </form>
+                            <form action="{{ url_for('attendance.mark') }}" method="POST">
+                                <input type="hidden" name="user_id" value="{{ member.id }}">
+                                <input type="hidden" name="status" value="Izin">
+                                <button type="submit" class="action-btn btn-i {% if member.today_status == 'Izin' %}active{% endif %}" title="Izin">I</button>
+                            </form>
+                            <form action="{{ url_for('attendance.mark') }}" method="POST">
+                                <input type="hidden" name="user_id" value="{{ member.id }}">
+                                <input type="hidden" name="status" value="Sakit">
+                                <button type="submit" class="action-btn btn-s {% if member.today_status == 'Sakit' %}active{% endif %}" title="Sakit">S</button>
+                            </form>
+                            <form action="{{ url_for('attendance.mark') }}" method="POST">
+                                <input type="hidden" name="user_id" value="{{ member.id }}">
+                                <input type="hidden" name="status" value="Alpha">
+                                <button type="submit" class="action-btn btn-a {% if member.today_status == 'Alpha' %}active{% endif %}" title="Alpha">A</button>
+                            </form>
+                            <a href="{{ url_for('attendance.member_detail', user_id=member.id) }}" class="action-btn" title="Detail">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Admin Tools -->
+    <div class="admin-controls" style="margin-top: 24px;">
+        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Panel Kontrol</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <form action="{{ url_for('attendance.reset_today') }}" method="POST" onsubmit="return confirm('Reset semua absensi hari ini?')">
+                <button type="submit" class="btn btn-tonal" style="width: 100%; height: 52px; border-radius: 14px; color: var(--md-sys-color-error);">
+                    <span class="material-symbols-outlined">restart_alt</span>
+                    <span>Reset Hari Ini</span>
+                </button>
+            </form>
+            <a href="#" class="btn btn-tonal" style="width: 100%; height: 52px; border-radius: 14px; opacity: 0.5; pointer-events: none;">
+                <span class="material-symbols-outlined">file_download</span>
+                <span>Export Data</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Floating Action Button for Scanner -->
+    <a href="{{ url_for('attendance.scanner') }}" class="fab-scanner">
+        <span class="material-symbols-outlined">qr_code_scanner</span>
+        <span class="desktop-only">Pindai QR</span>
+    </a>
+    {% endif %}
+
+    <!-- Weekly Personal Chart -->
+    <div class="card attendance-chart-card" style="margin-top: 20px;">
+        <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; font-weight: 700;">Progres Kehadiran</h3>
+        {% set max_count = weekly_data|map(attribute='count')|max %}
+        <div class="attendance-history" role="img" aria-label="Grafik kehadiran tujuh hari terakhir">
+            {% for day in weekly_data %}
+            {% set bar_height = (day.count / max_count * 100) if max_count else 4 %}
+            <div class="attendance-day" title="{{ day.date }} · {{ day.count }} kali hadir">
+                <span class="attendance-day-count">{{ day.count }}</span>
+                <div class="attendance-day-track"><div class="attendance-day-bar" style="height: {{ bar_height }}%;"></div></div>
+                <span>{{ day.day }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleQR() {
+        const panel = document.getElementById('personal-qr-panel');
+        const button = document.querySelector('.attendance-qr-toggle');
+        const showing = panel.style.display === 'none';
+        panel.style.display = showing ? 'block' : 'none';
+        button.setAttribute('aria-expanded', String(showing));
+        button.title = showing ? 'Sembunyikan QR presensi' : 'Tampilkan QR presensi';
+        if (panel.style.display === 'block') panel.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    let currentFilter = 'all';
+
+    function setFilter(filter, el) {
+        currentFilter = filter;
+        
+        // Update Chips UI
+        document.querySelectorAll('.chip').forEach(c => {
+            c.classList.remove('active');
+            c.setAttribute('aria-pressed', 'false');
+            if (el && c === el) {
+                c.classList.add('active');
+                c.setAttribute('aria-pressed', 'true');
+            } else if (!el && c.textContent.includes(filter)) {
+                c.classList.add('active');
+                c.setAttribute('aria-pressed', 'true');
+            }
+        });
+        document.querySelectorAll('.summary-card').forEach(card => {
+            card.classList.toggle('active', card.textContent.trim().includes(filter));
+        });
+        
+        filterMembers();
+    }
+
+    function filterMembers() {
+        const query = document.getElementById('memberSearch').value.toLowerCase();
+        const cards = document.querySelectorAll('.member-card');
+        const rows = document.querySelectorAll('.member-row');
+        
+        const filterFn = (el) => {
+            const name = el.dataset.name;
+            const status = el.dataset.status;
+            const matchesSearch = name.includes(query);
+            const matchesFilter = currentFilter === 'all' || status === currentFilter;
+            
+            if (matchesSearch && matchesFilter) {
+                el.style.display = el.tagName === 'TR' ? 'table-row' : 'flex';
+            } else {
+                el.style.display = 'none';
+            }
+        };
+
+        cards.forEach(filterFn);
+        rows.forEach(filterFn);
+    }
+
+</script>
+{% endblock %}

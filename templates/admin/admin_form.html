@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title_bar %}{{ action }} Administrator{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <div style="max-width: 600px; margin: 0 auto; width: 100%;">
+        <div style="margin-bottom: 32px; text-align: center;">
+            <div style="width: 64px; height: 64px; background: var(--md-sys-color-primary-container); border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; color: var(--md-sys-color-primary); margin-bottom: 16px;">
+                <span class="material-symbols-outlined" style="font-size: 32px;">{% if action == 'Add' %}person_add{% else %}manage_accounts{% endif %}</span>
+            </div>
+            <h1 style="font-weight: 800; font-size: 1.75rem; letter-spacing: -0.02em; margin: 0 0 8px 0;">{{ action }} Administrator</h1>
+            <p style="color: var(--md-sys-color-on-surface-variant); font-size: 0.95rem;">Konfigurasi hak akses dan profil administrator sistem.</p>
+        </div>
+
+        <div class="card" style="background: var(--md-sys-color-surface); border-radius: 28px; padding: clamp(16px, 5vw, 32px); border: 1px solid var(--md-sys-color-outline-variant); width: 100%; box-sizing: border-box;">
+            <form action="{{ url_for('admin.add_admin' if action == 'Add' else 'admin.edit_admin', id=admin.id if admin else 0) }}" method="POST">
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em;">Nama Lengkap</label>
+                        <input type="text" name="full_name" value="{{ admin.full_name if admin else '' }}" required placeholder="Nama lengkap pengelola" style="width: 100%; height: 56px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 1rem; color: var(--md-sys-color-on-surface); box-sizing: border-box;">
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em;">Username Access</label>
+                        <input type="text" name="username" value="{{ admin.username if admin else '' }}" {% if action == 'Edit' %}disabled{% endif %} required placeholder="Username unik" style="width: 100%; height: 56px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 1rem; color: var(--md-sys-color-on-surface); box-sizing: border-box;">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em;">Role Jabatan</label>
+                            <select name="role" style="width: 100%; height: 56px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 1rem; color: var(--md-sys-color-on-surface); box-sizing: border-box;">
+                                <option value="Admin" {% if admin and admin.role == 'Admin' %}selected{% endif %}>Admin</option>
+                                <option value="Super Admin" {% if admin and admin.role == 'Super Admin' %}selected{% endif %}>Super Admin</option>
+                                {% if session.get('role') == 'Owner' %}<option value="Owner" {% if admin and admin.role == 'Owner' %}selected{% endif %}>Owner</option>{% endif %}
+                                <option value="Moderator" {% if admin and admin.role == 'Moderator' %}selected{% endif %}>Moderator</option>
+                            </select>
+                        </div>
+                        {% if action == 'Edit' %}
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em;">Status Akun</label>
+                            <select name="status" style="width: 100%; height: 56px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 1rem; color: var(--md-sys-color-on-surface); box-sizing: border-box;">
+                                <option value="active" {% if admin and admin.status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if admin and admin.status == 'inactive' %}selected{% endif %}>Disabled</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em;">
+                            {% if action == 'Add' %}Password{% else %}Ganti Password{% endif %}
+                        </label>
+                        <input type="password" name="password" {% if action == 'Add' %}required{% endif %} placeholder="{% if action == 'Add' %}Min. 8 karakter{% else %}Biarkan kosong jika tidak diganti{% endif %}" style="width: 100%; height: 56px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 1rem; color: var(--md-sys-color-on-surface); box-sizing: border-box;">
+                    </div>
+
+                    {% if action == 'Add' %}
+                    <div style="background: var(--md-sys-color-error-container); padding: 16px; border-radius: 16px; color: var(--md-sys-color-on-error-container);">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Admin Passkey</label>
+                        <input type="password" name="passkey" required placeholder="Masukkan passkey keamanan" style="width: 100%; height: 48px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 1rem; color: var(--md-sys-color-on-surface); box-sizing: border-box;">
+                        <p style="font-size: 0.75rem; margin-top: 8px; opacity: 0.8;">Otentikasi tambahan diperlukan untuk membuat akun administrator baru.</p>
+                    </div>
+                    {% endif %}
+
+                    <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button type="submit" class="btn btn-primary" style="flex: 2; min-width: 180px; height: 56px; border-radius: 14px;">
+                            <span class="material-symbols-outlined">save</span>
+                            <span>Simpan Konfigurasi</span>
+                        </button>
+                        <a href="{{ url_for('admin.admin_list') }}" class="btn btn-tonal" style="flex: 1; min-width: 100px; height: 56px; border-radius: 14px;">
+                            <span>Batal</span>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

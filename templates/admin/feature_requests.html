@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Idea Hub & Feature Requests{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <div style="margin-bottom: 32px;">
+        <h1 style="font-weight: 500;">Think Hub: Ide & Fitur</h1>
+        <p style="color: var(--md-sys-color-on-surface-variant);">Kumpulan ide kreatif dan permintaan fitur dari anggota Paskibra.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px;">
+        {% for feature in features %}
+        <div class="card" style="background: var(--md-sys-color-surface); height: 100%; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <span class="chip" style="background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
+                    {{ feature.status }}
+                </span>
+                <div style="display: flex; align-items: center; gap: 4px; color: var(--md-sys-color-primary);">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">thumb_up</span>
+                    <span style="font-weight: 600;">{{ feature.votes }}</span>
+                </div>
+            </div>
+
+            <h3 style="margin: 0 0 8px; font-weight: 600;">{{ feature.title }}</h3>
+            <p style="margin: 0; font-size: 0.875rem; color: var(--md-sys-color-on-surface-variant); line-height: 1.5; flex: 1;">
+                {{ feature.description }}
+            </p>
+
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--md-sys-color-outline-variant); display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.75rem; color: var(--md-sys-color-outline);">
+                    Dari: <strong>{{ feature.requester_name }}</strong>
+                </div>
+                
+                {% if feature.status == 'pending' %}
+                <form action="{{ url_for('admin.implement_feature', id=feature.id) }}" method="POST">
+                    <button type="submit" class="btn btn-primary" style="height: 36px; padding: 0 16px; font-size: 0.875rem;">
+                        <span>Implementasikan</span>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if not features %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 80px 24px; color: var(--md-sys-color-outline);">
+            <div style="width: 80px; height: 80px; background: var(--md-sys-color-surface-container); border-radius: var(--radius-full); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                <span class="material-symbols-outlined" style="font-size: 40px; opacity: 0.5;">lightbulb</span>
+            </div>
+            <p>Belum ada ide atau permintaan fitur yang diajukan.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Pengaturan Sistem{% endblock %}
+
+{% block head %}
+<style>
+    .system-settings { max-width: 900px; margin: 0 auto; }
+    .system-settings__intro { margin: 2px 0 24px; }
+    .system-settings__intro h1 { margin: 0 0 6px; font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 700; letter-spacing: -.035em; }
+    .system-settings__intro p { margin: 0; color: var(--md-sys-color-on-surface-variant); }
+    .system-settings__panel { background: var(--md-sys-color-surface-container-lowest); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 20px; padding: clamp(18px, 3vw, 28px); }
+    .system-setting { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 280px); align-items: center; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+    .system-setting:first-child { padding-top: 0; }
+    .system-setting__name { margin-bottom: 4px; font-weight: 650; }
+    .system-setting__description { margin: 0; color: var(--md-sys-color-on-surface-variant); font-size: .875rem; }
+    .system-setting__control select { width: 100%; height: 46px; padding: 0 12px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; color: var(--md-sys-color-on-surface); background: var(--md-sys-color-surface); font: inherit; }
+    .system-setting__control textarea { width: 100%; min-height: 112px; padding: 12px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; color: var(--md-sys-color-on-surface); background: var(--md-sys-color-surface); font: inherit; line-height: 1.5; resize: vertical; }
+    .system-setting__help { margin: 7px 0 0; color: var(--md-sys-color-outline); font-size: .76rem; }
+    .system-setting__control .text-field { margin: 0; }
+    .system-setting__control input { min-height: 46px; }
+    .system-settings__actions { display: flex; justify-content: flex-end; padding-top: 22px; }
+    .system-settings__info { display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 18px 20px; border-radius: 16px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); }
+    .system-settings__info .material-symbols-outlined { color: var(--md-sys-color-primary); }
+    @media (max-width: 600px) {
+        .system-setting { grid-template-columns: 1fr; gap: 12px; }
+        .system-settings__actions .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="system-settings slide-up">
+    <header class="system-settings__intro">
+        <h1>Pengaturan Sistem</h1>
+        <p>Kelola akses dan perilaku utama platform.</p>
+    </header>
+
+    <section class="system-settings__panel" aria-label="Konfigurasi sistem">
+        <form action="{{ url_for('admin.settings') }}" method="POST">
+            {% for setting in settings %}
+            <div class="system-setting">
+                <div>
+                    <div class="system-setting__name">{% if setting.key == 'registration_open' %}Pendaftaran anggota{% elif setting.key == 'registration_closed_reason' %}Alasan penutupan pendaftaran{% elif setting.key == 'maintenance_message' %}Pesan mode pemeliharaan{% else %}{{ setting.key.replace('_', ' ').title() }}{% endif %}</div>
+                    <p class="system-setting__description">{{ setting.description }}</p>
+                </div>
+                <div class="system-setting__control">
+                    {% if setting.key == 'maintenance_mode' or setting.key == 'registration_open' %}
+                    <select id="setting-{{ setting.key }}" name="{{ setting.key }}">
+                        {% if setting.key == 'registration_open' %}
+                        <option value="1" {% if setting.value == '1' %}selected{% endif %}>Buka pendaftaran</option>
+                        <option value="0" {% if setting.value == '0' %}selected{% endif %}>Tutup pendaftaran</option>
+                        {% else %}
+                        <option value="1" {% if setting.value == '1' %}selected{% endif %}>Aktif</option>
+                        <option value="0" {% if setting.value == '0' %}selected{% endif %}>Nonaktif</option>
+                        {% endif %}
+                    </select>
+                    {% elif setting.key == 'registration_closed_reason' or setting.key == 'maintenance_message' %}
+                    <textarea id="setting-{{ setting.key }}" name="{{ setting.key }}" rows="4" maxlength="{% if setting.key == 'maintenance_message' %}1000{% else %}500{% endif %}" aria-describedby="help-{{ setting.key }}">{{ setting.value }}</textarea>
+                    <p class="system-setting__help" id="help-{{ setting.key }}">{% if setting.key == 'maintenance_message' %}Maksimal 1000 karakter. Teks ini ditampilkan kepada pengunjung saat mode pemeliharaan aktif.{% else %}Maksimal 500 karakter. Teks ini tampil di halaman pendaftaran yang ditutup.{% endif %}</p>
+                    {% else %}
+                    <div class="text-field"><input id="setting-{{ setting.key }}" type="text" name="{{ setting.key }}" value="{{ setting.value }}"></div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            <div class="system-settings__actions">
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">save</span>
+                    <span>Simpan Perubahan</span>
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <aside class="system-settings__info">
+        <span class="material-symbols-outlined" aria-hidden="true">info</span>
+        <div><strong>Informasi Sistem</strong><br><span>Perubahan berlaku langsung setelah disimpan. Saat pendaftaran ditutup, calon anggota akan melihat alasan yang Anda isi di halaman penutupan.</span><br><span>Versi Platform: {{ config.VERSION }} · Database: SQLite3 · Server: Flask/WSGI</span></div>
+    </aside>
+</div>
+{% endblock %}

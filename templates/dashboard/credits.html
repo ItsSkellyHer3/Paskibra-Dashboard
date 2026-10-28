@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Kredit{% endblock %}
+
+{% block head %}
+<style>
+    .credits-page { max-width: 860px; margin: 0 auto; display: grid; gap: 16px; }
+    .credits-title { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+    .credits-title h1 { margin: 0; font-size: clamp(1.6rem, 3vw, 2rem); letter-spacing: -.035em; }
+    .credits-title p { margin: 6px 0 0; color: var(--md-sys-color-on-surface-variant); }
+    .credits-project-tag { flex: 0 0 auto; padding: 7px 10px; border-radius: 999px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); font-size: .68rem; font-weight: 750; letter-spacing: .08em; }
+    .credits-card { padding: clamp(18px, 4vw, 28px); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 18px; background: var(--md-sys-color-surface-container-low); }
+    .credits-profile { display: flex; align-items: center; gap: 18px; }
+    .credits-avatar { display: grid; place-items: center; flex: 0 0 76px; width: 76px; height: 76px; overflow: hidden; border-radius: 22px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary); }
+    .credits-avatar .material-symbols-outlined { font-size: 36px; }
+    .credits-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .credits-profile-copy { flex: 1; min-width: 0; }
+    .credits-profile-copy a { color: var(--md-sys-color-on-surface); font-size: 1.1rem; font-weight: 700; text-decoration: none; }
+    .credits-profile-copy a:hover { color: var(--md-sys-color-primary); }
+    .credits-handle { display: block; margin-top: 3px; color: var(--md-sys-color-on-surface-variant); font-size: .82rem; }
+    .credits-bio { margin: 10px 0 0; color: var(--md-sys-color-on-surface-variant); font-size: .9rem; line-height: 1.55; }
+    .credits-stats { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; color: var(--md-sys-color-on-surface-variant); font-size: .78rem; }
+    .credits-link { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 7px; padding: 10px 13px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; color: var(--md-sys-color-on-surface); font-size: .82rem; font-weight: 650; text-decoration: none; }
+    .credits-link:hover { border-color: var(--md-sys-color-primary); color: var(--md-sys-color-primary); }
+    .credits-repositories h2, .credits-project-card h2 { margin: 0 0 12px; font-size: 1rem; }
+    .credits-repo { display: flex; align-items: flex-start; gap: 12px; padding: 15px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 14px; color: var(--md-sys-color-on-surface); text-decoration: none; }
+    .credits-repo:hover { border-color: var(--md-sys-color-primary); background: var(--md-sys-color-surface-container-low); }
+    .credits-repo-icon { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; border-radius: 12px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary); }
+    .credits-repo-copy { min-width: 0; }
+    .credits-repo-copy strong { display: block; font-size: .9rem; }
+    .credits-repo-copy p { margin: 4px 0 7px; color: var(--md-sys-color-on-surface-variant); font-size: .8rem; line-height: 1.45; }
+    .credits-repo-copy span { color: var(--md-sys-color-outline); font-size: .72rem; }
+    .credits-project-card p { margin: 0; color: var(--md-sys-color-on-surface-variant); font-size: .88rem; line-height: 1.6; }
+    .credits-feature-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .credits-feature { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 999px; color: var(--md-sys-color-on-surface-variant); font-size: .76rem; }
+    .credits-feature .material-symbols-outlined { color: var(--md-sys-color-primary); font-size: 17px; }
+    .credits-state { margin: 12px 0 0; color: var(--md-sys-color-on-surface-variant); font-size: .78rem; }
+    [hidden] { display: none !important; }
+    @media (max-width: 640px) {
+        .credits-title { align-items: flex-start; flex-direction: column; }
+        .credits-profile { flex-wrap: wrap; gap: 12px; }
+        .credits-avatar { flex-basis: 60px; width: 60px; height: 60px; border-radius: 18px; }
+        .credits-profile-copy { flex-basis: calc(100% - 76px); }
+        .credits-link { margin-left: 72px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="credits-page fade-in">
+    <header class="credits-title">
+        <div>
+            <h1>Kredit</h1>
+            <p>Tentang pembuat aplikasi ini.</p>
+        </div>
+        <span class="credits-project-tag">PROYEK KE-3</span>
+    </header>
+
+    <section class="credits-card" aria-label="Profil pembuat">
+        <div class="credits-profile" aria-live="polite">
+            <div class="credits-avatar" id="credits-avatar">
+                <span class="material-symbols-outlined" aria-hidden="true">person</span>
+            </div>
+            <div class="credits-profile-copy">
+                <a id="credits-name" href="https://github.com/itsskellyher3" target="_blank" rel="noopener noreferrer">itsskellyher3</a>
+                <span class="credits-handle" id="credits-handle">Pembuat aplikasi</span>
+                <p class="credits-bio" id="credits-bio">Mengambil profil GitHub…</p>
+                <div class="credits-stats" id="credits-stats" hidden></div>
+            </div>
+            <a class="credits-link" id="credits-profile-link" href="https://github.com/itsskellyher3" target="_blank" rel="noopener noreferrer">
+                <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span> GitHub
+            </a>
+        </div>
+        <p class="credits-state" id="credits-state" role="status" hidden></p>
+    </section>
+
+    <section class="credits-card credits-project-card" aria-labelledby="project-about-heading">
+        <h2 id="project-about-heading">Tentang proyek</h2>
+        <p>Portal digital Paskibra untuk mengelola anggota, presensi, jadwal latihan, dan informasi kegiatan dalam satu tempat.</p>
+        <div class="credits-feature-list" aria-label="Fitur utama">
+            <span class="credits-feature"><span class="material-symbols-outlined" aria-hidden="true">qr_code_scanner</span>Presensi QR</span>
+            <span class="credits-feature"><span class="material-symbols-outlined" aria-hidden="true">groups</span>Manajemen anggota</span>
+            <span class="credits-feature"><span class="material-symbols-outlined" aria-hidden="true">event</span>Jadwal latihan</span>
+            <span class="credits-feature"><span class="material-symbols-outlined" aria-hidden="true">notifications_active</span>Notifikasi</span>
+        </div>
+        <div class="credits-feature-list" aria-label="Teknologi">
+            <span class="credits-feature">Python</span>
+            <span class="credits-feature">Flask</span>
+            <span class="credits-feature">SQLite</span>
+            <span class="credits-feature">Progressive Web App</span>
+        </div>
+    </section>
+
+    <section class="credits-repositories" id="credits-repositories" hidden>
+        <h2>Repo pilihan</h2>
+        <div id="credits-repo-list"></div>
+    </section>
+</div>
+
+<script>
+    (async function loadCreditsProfile() {
+        const username = 'itsskellyher3';
+        const cacheKey = `credits-profile-${username}`;
+        const name = document.getElementById('credits-name');
+        const handle = document.getElementById('credits-handle');
+        const bio = document.getElementById('credits-bio');
+        const avatar = document.getElementById('credits-avatar');
+        const stats = document.getElementById('credits-stats');
+        const state = document.getElementById('credits-state');
+        const profileLink = document.getElementById('credits-profile-link');
+        const repoSection = document.getElementById('credits-repositories');
+        const repoList = document.getElementById('credits-repo-list');
+
+        function githubUrl(value) {
+            try {
+                const url = new URL(value);
+                return url.protocol === 'https:' && url.origin === 'https://github.com' ? url : null;
+            } catch (_) { return null; }
+        }
+
+        function render(profile, repository) {
+            const url = githubUrl(profile.html_url);
+            const href = url ? url.href : `https://github.com/${username}`;
+            name.href = href;
+            profileLink.href = href;
+            name.textContent = profile.name || profile.login || username;
+            handle.textContent = `@${profile.login || username}`;
+            bio.textContent = profile.bio || 'Profil GitHub';
+
+            try {
+                const photo = new URL(profile.avatar_url);
+                if (photo.protocol === 'https:' && photo.hostname === 'avatars.githubusercontent.com') {
+                    const image = document.createElement('img');
+                    image.src = photo.href;
+                    image.alt = `Foto profil ${profile.login || username}`;
+                    image.loading = 'lazy';
+                    image.decoding = 'async';
+                    avatar.replaceChildren(image);
+                }
+            } catch (_) {}
+
+            stats.replaceChildren();
+            [[profile.public_repos, 'repositori publik'], [profile.created_at ? new Date(profile.created_at).getFullYear() : '', 'bergabung']].forEach(([value, label]) => {
+                if (!value) return;
+                const item = document.createElement('span');
+                item.textContent = label === 'bergabung' ? `Bergabung ${value}` : `${Number(value) || 0} ${label}`;
+                stats.append(item);
+            });
+            stats.hidden = false;
+
+            repoList.replaceChildren();
+            const chatify = repository && repository.name?.toLowerCase() === 'chatify' ? repository : null;
+            if (chatify) {
+                const repoUrl = githubUrl(chatify.html_url);
+                if (repoUrl) {
+                    const link = document.createElement('a');
+                    link.className = 'credits-repo';
+                    link.href = repoUrl.href;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    const icon = document.createElement('span');
+                    icon.className = 'credits-repo-icon material-symbols-outlined';
+                    icon.textContent = 'forum';
+                    const copy = document.createElement('div');
+                    copy.className = 'credits-repo-copy';
+                    const title = document.createElement('strong');
+                    title.textContent = chatify.name;
+                    const description = document.createElement('p');
+                    description.textContent = chatify.description || 'Proyek Chatify di GitHub.';
+                    const info = document.createElement('span');
+                    const updated = chatify.updated_at ? new Date(chatify.updated_at).toLocaleDateString() : '';
+                    info.textContent = [chatify.language, updated ? `Diperbarui ${updated}` : ''].filter(Boolean).join(' · ');
+                    copy.append(title, description, info);
+                    link.append(icon, copy);
+                    repoList.append(link);
+                }
+            }
+            repoSection.hidden = repoList.children.length === 0;
+        }
+
+        let cached = null;
+        try {
+            const value = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+            if (value?.profile && Date.now() - value.savedAt < 6 * 60 * 60 * 1000) cached = value;
+        } catch (_) {}
+        if (cached) {
+            const oldChatify = Array.isArray(cached.repositories)
+                ? cached.repositories.find(repo => repo.name?.toLowerCase() === 'chatify') : null;
+            render(cached.profile, cached.repository || oldChatify);
+        }
+
+        try {
+            const headers = {Accept: 'application/vnd.github+json'};
+            const [profileResponse, repoResponse] = await Promise.all([
+                fetch(`https://api.github.com/users/${username}`, {headers}),
+                fetch(`https://api.github.com/repos/${username}/Chatify`, {headers})
+            ]);
+            if (!profileResponse.ok) throw new Error('GitHub profile unavailable');
+            const profile = await profileResponse.json();
+            const repository = repoResponse.ok ? await repoResponse.json() : null;
+            render(profile, repository);
+            try { localStorage.setItem(cacheKey, JSON.stringify({savedAt: Date.now(), profile, repository})); } catch (_) {}
+            state.hidden = true;
+        } catch (_) {
+            if (!cached) {
+                state.textContent = 'Profil GitHub belum dapat dimuat.';
+                state.hidden = false;
+            }
+        }
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    main { margin-left:0 !important; padding:0 !important; }
+    header, aside, .bottom-nav { display:none !important; }
+    body { background:var(--md-sys-color-surface); }
+    .register-page { min-height:100svh; display:grid; place-items:center; padding:28px 16px; background:radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--md-sys-color-primary) 11%, transparent), transparent 52%), var(--md-sys-color-surface); }
+    .register-card { width:min(100%, 560px); padding:clamp(22px,5vw,38px); border:1px solid var(--md-sys-color-outline-variant); border-radius:24px; background:var(--md-sys-color-surface-container-lowest); box-shadow:var(--elevation-2); }
+    .register-brand { display:flex; align-items:center; gap:12px; margin-bottom:28px; color:var(--md-sys-color-primary); font-size:.82rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+    .register-brand img { width:42px; height:42px; border-radius:13px; object-fit:cover; }
+    .register-card h1 { margin:0; font-size:clamp(1.7rem,5vw,2.15rem); letter-spacing:-.04em; }
+    .register-intro { margin:8px 0 25px; color:var(--md-sys-color-on-surface-variant); line-height:1.55; }
+    .register-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+    .register-field { margin-bottom:16px; }
+    .register-field.full { grid-column:1/-1; }
+    .register-field label { display:block; margin-bottom:7px; font-size:.87rem; font-weight:650; }
+    .register-field input { width:100%; min-height:48px; padding:0 13px; border:1px solid var(--md-sys-color-outline-variant); border-radius:12px; background:var(--md-sys-color-surface); color:var(--md-sys-color-on-surface); font:inherit; }
+    .register-field input:focus { outline:3px solid color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent); border-color:var(--md-sys-color-primary); }
+    .consent-box { display:flex; gap:11px; align-items:flex-start; padding:14px; margin:5px 0 18px; border-radius:13px; background:var(--md-sys-color-surface-container); color:var(--md-sys-color-on-surface-variant); font-size:.84rem; line-height:1.55; }
+    .consent-box input { width:18px; height:18px; flex:0 0 auto; margin:2px 0 0; accent-color:var(--md-sys-color-primary); }
+    .consent-box a { color:var(--md-sys-color-primary); font-weight:700; }
+    .register-submit { width:100%; min-height:48px; border:0; border-radius:13px; font:inherit; font-weight:700; cursor:pointer; }
+    .register-foot { margin:20px 0 0; text-align:center; color:var(--md-sys-color-on-surface-variant); font-size:.9rem; }
+    .consent-dialog { box-sizing:border-box; width:min(calc(100% - 24px),480px); max-height:calc(100vh - 24px); max-height:calc(100dvh - 24px); margin:auto; padding:clamp(16px,5vw,26px); overflow-y:auto; overscroll-behavior:contain; border:1px solid var(--md-sys-color-outline-variant); border-radius:20px; color:var(--md-sys-color-on-surface); background:var(--md-sys-color-surface-container-lowest); box-shadow:0 24px 80px rgba(22,20,45,.24); }
+    .consent-dialog::backdrop { background:rgba(20,20,32,.52); backdrop-filter:blur(3px); }
+    .consent-dialog h2 { margin:0 0 8px; font-size:1.3rem; }
+    .consent-dialog p, .consent-dialog li { color:var(--md-sys-color-on-surface-variant); font-size:.9rem; line-height:1.55; }
+    .consent-dialog ul { padding-left:20px; }
+    .consent-dialog-actions { display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end; margin-top:20px; }
+    @media(max-width:520px) {
+        .register-grid { grid-template-columns:1fr; }
+        .register-field.full { grid-column:auto; }
+        .register-card { border-radius:20px; }
+        .consent-dialog { border-radius:16px; }
+        .consent-dialog-actions { display:grid; grid-template-columns:1fr; }
+        .consent-dialog-actions button { width:100%; min-height:44px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-page">
+    <section class="register-card">
+        <div class="register-brand"><img src="{{ url_for('static', filename='img/paskiblogo.jpg') }}" alt=""><span>Paskibra</span></div>
+        <h1>Buat akun anggota</h1>
+        <p class="register-intro">Isi data dasar untuk mengajukan keanggotaan. Admin akan meninjau pendaftaran sebelum akun aktif.</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}<div style="margin-bottom:16px">{% for category, message in messages %}<div role="alert" style="padding:12px 14px;border-radius:12px;margin-bottom:8px;background:var(--md-sys-color-error-container);color:var(--md-sys-color-on-error-container)">{{ message }}</div>{% endfor %}</div>{% endif %}
+        {% endwith %}
+        <form action="{{ url_for('auth.register') }}" method="POST" id="register-form">
+            <div class="register-grid">
+                <div class="register-field full"><label for="full_name">Nama lengkap</label><input type="text" id="full_name" name="full_name" autocomplete="name" maxlength="100" placeholder="Nama sesuai identitas" required autofocus></div>
+                <div class="register-field"><label for="class">Kelas</label><input type="text" id="class" name="class" maxlength="60" placeholder="Contoh: X-1" required></div>
+                <div class="register-field"><label for="username">Username</label><input type="text" id="username" name="username" autocomplete="username" minlength="3" maxlength="32" pattern="[A-Za-z0-9_.-]+" placeholder="3–32 karakter" required></div>
+                <div class="register-field full"><label for="password">Kata sandi</label><input type="password" id="password" name="password" autocomplete="new-password" minlength="8" placeholder="Minimal 8 karakter" required></div>
+            </div>
+            <label class="consent-box"><input type="checkbox" name="terms" required><span>Saya telah membaca dan menyetujui <a href="{{ url_for('auth.terms') }}" target="_blank" rel="noopener">Syarat Layanan</a> dan <a href="{{ url_for('auth.privacy') }}" target="_blank" rel="noopener">Pemberitahuan Privasi</a>. Saya memahami data dasar digunakan untuk akun, keanggotaan, dan presensi.</span></label>
+            <input type="hidden" name="consent_confirmed" id="consent-confirmed" value="">
+            <button type="submit" class="btn btn-primary register-submit" id="submit-btn">Kirim pendaftaran</button>
+        </form>
+        <dialog class="consent-dialog" id="consent-dialog" aria-labelledby="consent-title">
+            <h2 id="consent-title">Konfirmasi sebelum melanjutkan</h2>
+            <p>Data yang Anda isi dipakai untuk mengelola akun, keanggotaan, dan presensi Paskibra. Data tidak dijual atau digunakan untuk iklan.</p>
+            <ul><li>Nama, kelas, dan username membantu pengurus mengenali anggota.</li><li>Kata sandi disimpan dalam bentuk hash.</li><li>Notifikasi push hanya aktif jika Anda memilih mengaktifkannya di perangkat.</li></ul>
+            <p>Anda dapat membaca kembali <a href="{{ url_for('auth.terms') }}" target="_blank" rel="noopener">Syarat Layanan</a> dan <a href="{{ url_for('auth.privacy') }}" target="_blank" rel="noopener">Pemberitahuan Privasi</a>.</p>
+            <div class="consent-dialog-actions"><button type="button" class="btn btn-tonal" id="consent-back">Kembali</button><button type="button" class="btn btn-primary" id="consent-proceed">Saya membaca dan melanjutkan</button></div>
+        </dialog>
+        <p class="register-foot">Sudah punya akun? <a href="{{ url_for('auth.login') }}">Masuk</a></p>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('register-form').addEventListener('submit', function (event) {
+    const form = this;
+    const button = document.getElementById('submit-btn');
+    const dialog = document.getElementById('consent-dialog');
+    if (form.dataset.consentConfirmed !== 'true') {
+        event.preventDefault();
+        dialog.showModal();
+        return;
+    }
+    button.disabled = true;
+    button.textContent = 'Mengirim pendaftaran…';
+});
+document.getElementById('consent-back').addEventListener('click', () => document.getElementById('consent-dialog').close());
+document.getElementById('consent-proceed').addEventListener('click', () => {
+    const form = document.getElementById('register-form');
+    form.dataset.consentConfirmed = 'true';
+    document.getElementById('consent-confirmed').value = 'on';
+    document.getElementById('consent-dialog').close();
+    form.requestSubmit();
+});
+</script>
+{% endblock %}

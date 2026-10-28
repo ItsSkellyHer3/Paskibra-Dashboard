@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+main { margin-left:0 !important; padding:0 !important; } header, aside, .bottom-nav { display:none !important; }
+.qr-wait-page { min-height:100svh; display:grid; place-items:center; padding:24px 16px; background:radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent), transparent 58%), var(--md-sys-color-surface); }
+.qr-wait-card { width:min(100%,480px); padding:clamp(22px,5vw,36px); border:1px solid var(--md-sys-color-outline-variant); border-radius:24px; background:var(--md-sys-color-surface-container-lowest); text-align:center; box-shadow:var(--elevation-2); }
+.qr-wait-brand { color:var(--md-sys-color-primary); font-size:.78rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+.qr-wait-card h1 { margin:18px 0 7px; font-size:1.65rem; letter-spacing:-.04em; }
+.qr-wait-card p { color:var(--md-sys-color-on-surface-variant); line-height:1.55; }
+.qr-card { display:inline-block; margin:8px 0 16px; padding:16px; border:1px solid var(--md-sys-color-outline-variant); border-radius:18px; background:white; }
+.qr-card img { display:block; width:min(210px,55vw); height:auto; aspect-ratio:1; image-rendering:pixelated; }
+.wait-status { display:flex; align-items:center; justify-content:center; gap:9px; min-height:45px; margin:10px 0 18px; border-radius:12px; background:var(--md-sys-color-surface-container); color:var(--md-sys-color-on-surface-variant); font-weight:650; font-size:.9rem; }
+.wait-pulse { width:9px; height:9px; border-radius:50%; background:#d39b2f; box-shadow:0 0 0 0 color-mix(in srgb,#d39b2f 35%,transparent); animation:pulse 1.8s infinite; }
+.wait-status[data-state="active"] .wait-pulse { background:#36844d; animation:none; }
+.wait-status[data-state="rejected"] .wait-pulse { background:var(--md-sys-color-error); animation:none; }
+@keyframes pulse { 70% { box-shadow:0 0 0 9px transparent; } 100% { box-shadow:0 0 0 0 transparent; } }
+.qr-wait-actions { display:flex; gap:10px; flex-direction:column; }
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="qr-wait-page"><section class="qr-wait-card" aria-live="polite">
+    <div class="qr-wait-brand">Paskibra · Pendaftaran</div>
+    <h1>Menunggu persetujuan</h1>
+    <p>Hai <strong>{{ user.full_name }}</strong>. Tunjukkan QR ini kepada pengurus untuk verifikasi akun.</p>
+    <div class="qr-card"><img src="{{ qr_image }}" alt="QR verifikasi akun"></div>
+    <div class="wait-status" id="wait-status" data-state="pending"><span class="wait-pulse"></span><span id="wait-message">Menunggu pengurus meninjau pendaftaran…</span></div>
+    <p id="wait-hint" style="font-size:.82rem;margin:0 0 16px">Status diperiksa otomatis setiap 12 detik. Halaman tetap terbuka selama menunggu.</p>
+    <div class="qr-wait-actions"><button class="btn btn-primary" id="check-status" type="button">Periksa status sekarang</button><a href="{{ url_for('auth.logout') }}" class="btn btn-tonal">Keluar</a></div>
+</section></div>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+    const statusBox = document.getElementById('wait-status');
+    const message = document.getElementById('wait-message');
+    const hint = document.getElementById('wait-hint');
+    const button = document.getElementById('check-status');
+    let stopped = false;
+    async function checkStatus() {
+        if (stopped || document.hidden) return;
+        button.disabled = true;
+        try {
+            const response = await fetch('{{ url_for("auth.qr_wait_status") }}', {headers:{'Accept':'application/json'}, cache:'no-store'});
+            const data = await response.json();
+            if (data.status === 'active') {
+                stopped = true;
+                message.textContent = 'Akun disetujui. Membuka portal…';
+                statusBox.dataset.state = 'active';
+                window.location.assign('{{ url_for("auth.qr_wait") }}');
+            } else if (data.status === 'rejected' || data.status === 'suspended') {
+                stopped = true;
+                message.textContent = data.status === 'rejected' ? 'Pendaftaran belum disetujui. Hubungi pengurus.' : 'Akun sedang ditangguhkan. Hubungi pengurus.';
+                statusBox.dataset.state = 'rejected';
+                hint.textContent = 'Pemeriksaan otomatis dihentikan.';
+            } else if (!response.ok || data.status === 'missing') {
+                stopped = true;
+                message.textContent = 'Sesi verifikasi berakhir. Masuk kembali untuk melihat status.';
+                statusBox.dataset.state = 'rejected';
+            } else {
+                message.textContent = 'Masih menunggu tinjauan pengurus…';
+            }
+        } catch (error) {
+            message.textContent = 'Tidak dapat memperbarui status. Coba lagi beberapa saat.';
+        } finally {
+            button.disabled = false;
+        }
+    }
+    button.addEventListener('click', checkStatus);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) checkStatus(); });
+    window.setInterval(checkStatus, 12000);
+})();
+</script>
+{% endblock %}

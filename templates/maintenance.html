@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    body { background: var(--md-sys-color-surface-container-high); }
+    main { margin-left: 0 !important; padding: 0 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
+    <div class="slide-up" style="max-width: 500px; text-align: center;">
+        <div style="width: 140px; height: 140px; background: var(--md-sys-color-primary-container); border-radius: 48px; display: inline-flex; align-items: center; justify-content: center; color: var(--md-sys-color-primary); margin-bottom: 40px; box-shadow: var(--elevation-2);">
+            <span class="material-symbols-outlined" style="font-size: 80px; animation: pulse 2s infinite;">engineering</span>
+        </div>
+
+        <h1 style="font-weight: 600; font-size: 2.5rem; margin: 0;">Pemeliharaan Sistem</h1>
+        <p style="color: var(--md-sys-color-on-surface-variant); margin: 16px 0 40px; font-size: 1.125rem; line-height: 1.6;">
+            {{ maintenance_message }}
+        </p>
+
+        <div style="margin-top: 48px;">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="height: 52px; padding: 0 32px;">
+                <span class="material-symbols-outlined">login</span>
+                <span>Masuk Admin</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+</style>
+{% endblock %}

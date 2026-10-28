@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Pengumuman{% endblock %}
+
+{% block head %}
+<style>
+    .ann-container { max-width: 900px; margin: 0 auto; }
+    .search-filter-box {
+        background: var(--md-sys-color-surface-container);
+        padding: 24px;
+        border-radius: 32px;
+        margin-bottom: 32px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+    }
+    .filter-chip {
+        padding: 8px 16px;
+        border-radius: 100px;
+        background: var(--md-sys-color-surface);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .filter-chip.active {
+        background: var(--md-sys-color-primary);
+        color: white;
+        border-color: var(--md-sys-color-primary);
+    }
+    .ann-card {
+        background: var(--md-sys-color-surface);
+        border-radius: 28px;
+        padding: 24px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        margin-bottom: 24px;
+        position: relative;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .ann-card:hover { transform: translateY(-2px); box-shadow: var(--elevation-2); }
+    .ann-card.pinned {
+        border: 2px solid var(--md-sys-color-primary);
+        background: linear-gradient(to bottom right, var(--md-sys-color-surface), rgba(var(--md-sys-color-primary-rgb), 0.05));
+    }
+    .new-badge {
+        background: var(--md-sys-color-error);
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-left: 8px;
+    }
+    .category-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--md-sys-color-primary);
+        margin-bottom: 8px;
+        display: block;
+    }
+    .attachment-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: var(--md-sys-color-surface-container-high);
+        border-radius: 12px;
+        text-decoration: none;
+        color: var(--md-sys-color-on-surface);
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ann-container slide-up">
+    <div style="margin-bottom: 32px;">
+        <h1 style="font-weight: 800; font-size: 2.25rem; margin: 0;">Pusat Informasi</h1>
+        <p style="color: var(--md-sys-color-on-surface-variant); margin-top: 8px;">Berita, jadwal, dan pemberitahuan resmi Paskibra.</p>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="search-filter-box">
+        <div style="flex: 1; min-width: 250px; position: relative;">
+            <span class="material-symbols-outlined" style="position: absolute; left: 16px; top: 12px; color: var(--md-sys-color-outline);">search</span>
+            <input type="text" id="annSearch" placeholder="Cari informasi..." style="width: 100%; height: 48px; border-radius: 24px; border: 1px solid var(--md-sys-color-outline-variant); padding: 0 16px 0 48px; background: var(--md-sys-color-surface);">
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <div class="filter-chip active" data-category="all">Semua</div>
+            <div class="filter-chip" data-category="Latihan">Latihan</div>
+            <div class="filter-chip" data-category="Upacara">Upacara</div>
+            <div class="filter-chip" data-category="Penting">Penting</div>
+        </div>
+    </div>
+
+    <div id="annList">
+        {% for ann in announcements %}
+        <div class="ann-card {% if ann.is_pinned %}pinned{% endif %}" data-category="{{ ann.category }}" data-title="{{ ann.title.lower() }}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <span class="category-label">{{ ann.category }}</span>
+                    <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700;">
+                        {{ ann.title }}
+                        {% if ann.is_pinned %}<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; margin-left: 4px; color: var(--md-sys-color-primary); font-variation-settings: 'FILL' 1;">push_pin</span>{% endif %}
+                        <span class="new-indicator" data-time="{{ ann.created_at }}"></span>
+                    </h2>
+                </div>
+                {% if ann.is_pinned %}
+                <span style="font-size: 0.7rem; font-weight: 800; color: var(--md-sys-color-primary); background: var(--md-sys-color-primary-container); padding: 4px 12px; border-radius: 100px;">PINNED</span>
+                {% endif %}
+            </div>
+
+            <div style="margin-top: 16px; font-size: 1rem; line-height: 1.6; color: var(--md-sys-color-on-surface-variant); white-space: pre-wrap;">{{ ann.content }}</div>
+
+            {% if ann.attachment %}
+            <a href="{{ url_for('static', filename='uploads/' + ann.attachment) }}" class="attachment-btn" target="_blank">
+                <span class="material-symbols-outlined" style="font-size: 20px;">description</span>
+                <span>Unduh Lampiran</span>
+            </a>
+            {% endif %}
+
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--md-sys-color-outline-variant); display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.8rem; color: var(--md-sys-color-outline); display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">calendar_today</span>
+                    {{ ann.created_at[:16] }}
+                    <span style="opacity: 0.5;">•</span>
+                    <span class="material-symbols-outlined" style="font-size: 16px;">person</span>
+                    {{ ann.author }}
+                </div>
+                <button class="btn btn-icon" style="width: 40px; height: 40px;" title="Bagikan">
+                    <span class="material-symbols-outlined">share</span>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    // Search and Filter Logic
+    const searchInput = document.getElementById('annSearch');
+    const filterChips = document.querySelectorAll('.filter-chip');
+    const annCards = document.querySelectorAll('.ann-card');
+
+    function filterAnnouncements() {
+        const query = searchInput.value.toLowerCase();
+        const activeCategory = document.querySelector('.filter-chip.active').dataset.category;
+
+        annCards.forEach(card => {
+            const title = card.dataset.title;
+            const category = card.dataset.category;
+            const matchesSearch = title.includes(query);
+            const matchesCategory = activeCategory === 'all' || category.includes(activeCategory);
+
+            if (matchesSearch && matchesCategory) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    searchInput.addEventListener('input', filterAnnouncements);
+    filterChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            filterChips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            filterAnnouncements();
+        });
+    });
+
+    // New Indicator Logic (Last 24 hours)
+    document.querySelectorAll('.new-indicator').forEach(indicator => {
+        const postTime = new Date(indicator.dataset.time);
+        const now = new Date();
+        const diffInHours = (now - postTime) / (1000 * 60 * 60);
+        if (diffInHours < 24) {
+            indicator.innerHTML = '<span class="new-badge">BARU</span>';
+        }
+    });
+</script>
+{% endblock %}

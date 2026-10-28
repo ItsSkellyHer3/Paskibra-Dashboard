@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Persetujuan Akun{% endblock %}
+
+{% block head %}
+<style>
+    .approval-page { max-width:1120px; margin:0 auto; display:grid; gap:20px; }
+    .approval-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:16px; align-items:start; }
+    .approval-main { display:grid; gap:20px; min-width:0; }
+    .approval-side { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0 16px; padding:14px 16px; border:1px solid var(--md-sys-color-outline-variant); border-radius:16px; background:var(--md-sys-color-surface-container-low); }
+    .approval-side h2 { grid-column:1/-1; margin:0 0 8px; font-size:.96rem; }
+    .approval-step { display:flex; gap:9px; padding:10px 0; border-top:1px solid var(--md-sys-color-outline-variant); color:var(--md-sys-color-on-surface-variant); font-size:.82rem; line-height:1.45; }
+    .approval-step .material-symbols-outlined { color:var(--md-sys-color-primary); font-size:19px; }
+    .approval-side-note { grid-column:1/-1; margin:10px 0 0; padding:10px 12px; border-radius:11px; background:var(--md-sys-color-surface); color:var(--md-sys-color-outline); font-size:.78rem; line-height:1.5; }
+    .approval-heading { display:grid; gap:14px; }
+    .approval-heading h1 { margin:0; font-size:clamp(1.55rem,3vw,2.15rem); letter-spacing:-.04em; }
+    .approval-heading p { margin:6px 0 0; color:var(--md-sys-color-on-surface-variant); }
+    .approval-count { display:inline-flex; align-items:center; gap:7px; margin-top:11px; padding:6px 10px; border-radius:9px; color:var(--md-sys-color-primary); background:var(--md-sys-color-primary-container); font-size:.78rem; font-weight:700; }
+    .approval-tools { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; width:100%; }
+    .approval-tools > .btn { min-height:44px; white-space:nowrap; }
+    .approval-search { display:flex; align-items:center; gap:10px; width:100%; min-width:0; height:44px; padding:0 13px; border:1px solid var(--md-sys-color-outline-variant); border-radius:12px; background:var(--md-sys-color-surface); }
+    .approval-search input { width:100%; border:0; outline:0; background:transparent; color:var(--md-sys-color-on-surface); font:inherit; }
+    .approval-list { display:grid; gap:12px; }
+    .approval-item { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto; align-items:center; gap:16px; padding:18px; border:1px solid var(--md-sys-color-outline-variant); border-radius:16px; background:var(--md-sys-color-surface); transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+    .approval-item:hover { border-color:color-mix(in srgb,var(--md-sys-color-primary) 42%,var(--md-sys-color-outline-variant)); box-shadow:0 8px 22px rgba(30,30,60,.06); transform:translateY(-1px); }
+    .approval-person { display:flex; align-items:center; gap:13px; min-width:0; }
+    .approval-avatar { flex:0 0 46px; width:46px; height:46px; display:grid; place-items:center; border-radius:14px; color:var(--md-sys-color-on-primary-container); background:var(--md-sys-color-primary-container); font-weight:750; font-size:1.1rem; }
+    .approval-name { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; }
+    .approval-handle { margin-top:3px; color:var(--md-sys-color-outline); font-size:.82rem; }
+    .approval-meta { display:flex; gap:8px; flex-wrap:wrap; color:var(--md-sys-color-on-surface-variant); font-size:.83rem; }
+    .approval-tag { padding:5px 9px; border-radius:8px; background:var(--md-sys-color-surface-container-high); }
+    .approval-actions { display:flex; gap:8px; justify-content:flex-end; }
+    .approval-actions .btn { min-height:40px; border-radius:11px; padding-inline:13px; }
+    .approval-empty { padding:54px 20px; border:1px dashed var(--md-sys-color-outline-variant); border-radius:18px; background:var(--md-sys-color-surface); text-align:center; }
+    .approval-empty .material-symbols-outlined { font-size:42px; color:var(--md-sys-color-primary); }
+    .approval-empty h2 { margin:10px 0 4px; font-size:1.2rem; }
+    .approval-empty p { margin:0; color:var(--md-sys-color-outline); }
+    @media(max-width:760px) {
+        .approval-side { grid-template-columns:1fr; }
+        .approval-side h2,.approval-side-note { grid-column:auto; }
+        .approval-tools { width:100%; }
+        .approval-search { min-width:0; }
+        .approval-item { grid-template-columns:1fr; gap:13px; }
+        .approval-actions { justify-content:stretch; }
+        .approval-actions form { flex:1; }
+        .approval-actions .btn { width:100%; }
+    }
+    @media(max-width:390px) {
+        .approval-tools { grid-template-columns:minmax(0,1fr); }
+        .approval-tools > .btn { width:100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="approval-page fade-in">
+  <div class="approval-layout">
+   <div class="approval-main">
+    <header class="approval-heading">
+        <div>
+            <h1>Persetujuan akun</h1>
+            <p>Periksa identitas dan kelas sebelum mengaktifkan akun anggota.</p>
+            <span class="approval-count"><span class="material-symbols-outlined" style="font-size:17px">schedule</span>{{ users|length }} menunggu ditinjau</span>
+        </div>
+        <div class="approval-tools">
+            <label class="approval-search">
+                <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                <input id="approval-search" type="search" placeholder="Cari nama, username, atau kelas" oninput="filterApprovals()">
+            </label>
+            <a href="{{ url_for('admin.qr_scanner') }}" class="btn btn-primary">
+                <span class="material-symbols-outlined">qr_code_scanner</span> Pindai QR
+            </a>
+        </div>
+    </header>
+
+    <aside class="approval-side" aria-label="Alur peninjauan">
+        <h2>Alur peninjauan</h2>
+        <div class="approval-step"><span class="material-symbols-outlined">person_search</span><span>Cocokkan nama dan username dengan calon anggota.</span></div>
+        <div class="approval-step"><span class="material-symbols-outlined">qr_code_scanner</span><span>Pindai QR untuk memeriksa identitas saat anggota hadir.</span></div>
+        <div class="approval-step"><span class="material-symbols-outlined">verified_user</span><span>Setujui akun hanya setelah data dan identitas sesuai.</span></div>
+        <p class="approval-side-note">Pendaftaran yang disetujui langsung mendapat akses. Penolakan akan mempertahankan akun dalam status ditolak.</p>
+    </aside>
+
+    {% if users %}
+    <div class="approval-list" id="approval-list">
+        {% for user in users %}
+        <article class="approval-item" data-search="{{ (user.full_name ~ ' ' ~ (user.username or '') ~ ' ' ~ user.class)|lower }}">
+            <div class="approval-person">
+                <div class="approval-avatar">{{ user.full_name[:1]|upper }}</div>
+                <div style="min-width:0">
+                    <span class="approval-name">{{ user.full_name }}</span>
+                    <div class="approval-handle">@{{ user.username or 'tanpa-username' }}</div>
+                </div>
+            </div>
+            <div class="approval-meta">
+                <span class="approval-tag">Kelas {{ user.class }}</span>
+                <span class="approval-tag">Daftar {{ user.created_at[:10] if user.created_at else '—' }}</span>
+                <span class="approval-tag" style="color:#9a6500;background:#fff4d6">Perlu ditinjau</span>
+            </div>
+            <div class="approval-actions">
+                <form action="{{ url_for('admin.approve_user', user_id=user.id) }}" method="POST">
+                    <button class="btn btn-primary" type="submit"><span class="material-symbols-outlined">check</span> Setujui</button>
+                </form>
+                <form action="{{ url_for('admin.reject_user', user_id=user.id) }}" method="POST" onsubmit="return confirm('Tolak pendaftaran ini?')">
+                    <button class="btn btn-tonal" type="submit" style="color:var(--md-sys-color-error)"><span class="material-symbols-outlined">close</span> Tolak</button>
+                </form>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    <div class="approval-empty" id="approval-empty-search" style="display:none">
+        <span class="material-symbols-outlined">search_off</span>
+        <h2>Tidak ada hasil</h2>
+        <p>Coba kata kunci lain.</p>
+    </div>
+    {% else %}
+    <div class="approval-empty">
+        <span class="material-symbols-outlined">task_alt</span>
+        <h2>Semua pendaftaran sudah ditinjau</h2>
+        <p>Pendaftaran baru akan muncul di sini.</p>
+    </div>
+    {% endif %}
+   </div>
+  </div>
+</div>
+<script>
+function filterApprovals() {
+    const query = document.getElementById('approval-search').value.trim().toLowerCase();
+    let visible = 0;
+    document.querySelectorAll('.approval-item').forEach(item => {
+        const match = item.dataset.search.includes(query);
+        item.hidden = !match;
+        if (match) visible++;
+    });
+    const empty = document.getElementById('approval-empty-search');
+    if (empty) empty.style.display = visible ? 'none' : 'block';
+}
+</script>
+{% endblock %}

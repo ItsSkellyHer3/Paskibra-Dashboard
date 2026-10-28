@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center;">
+    <div class="slide-up">
+        <div style="font-size: 8rem; font-weight: 800; color: var(--md-sys-color-primary-container); line-height: 1;">404</div>
+        <h1 style="margin-top: -20px; font-weight: 600;">Halaman Tidak Ditemukan</h1>
+        <p style="color: var(--md-sys-color-on-surface-variant); max-width: 400px; margin: 16px auto 32px;">Maaf, halaman yang Anda cari tidak tersedia atau telah dipindahkan.</p>
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary" style="height: 52px; padding: 0 32px;">
+            <span class="material-symbols-outlined">home</span>
+            <span>Kembali ke Beranda</span>
+        </a>
+    </div>
+</div>
+{% endblock %}

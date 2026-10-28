@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+main { margin-left:0 !important; padding:24px 16px !important; } header, aside, .bottom-nav { display:none !important; }
+.legal-page { width:min(100%,760px); margin:0 auto; padding:clamp(22px,5vw,42px); border:1px solid var(--md-sys-color-outline-variant); border-radius:22px; background:var(--md-sys-color-surface-container-lowest); }
+.legal-brand { color:var(--md-sys-color-primary); font-size:.78rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+.legal-page h1 { margin:10px 0 6px; letter-spacing:-.04em; }
+.legal-updated { color:var(--md-sys-color-outline); font-size:.85rem; }
+.legal-page h2 { margin:25px 0 7px; font-size:1.05rem; }
+.legal-page p, .legal-page li { color:var(--md-sys-color-on-surface-variant); line-height:1.7; }
+.legal-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:28px; }
+@media(max-width:560px) { .legal-page { border-radius:16px; } }
+</style>
+{% endblock %}
+{% block content %}
+<article class="legal-page">
+    <div class="legal-brand">Paskibra</div>
+    {% if document_type == 'privacy' %}
+    <h1>Pemberitahuan Privasi</h1>
+    <p class="legal-updated">Versi {{ terms_version }} · Berlaku mulai 25 Oktober 2026</p>
+    <p>Dokumen ini menjelaskan data yang dipakai oleh portal Paskibra, alasan penggunaannya, dan pilihan Anda. Portal ini dikelola oleh pengurus Paskibra untuk kebutuhan keanggotaan.</p>
+    <h2>Data yang digunakan</h2>
+    <ul><li>Nama, kelas, dan username untuk membuat akun dan membantu pengurus mengenali anggota.</li><li>Nama panggilan, bio, nomor WhatsApp, dan tanggal lahir bersifat opsional jika Anda mengisinya pada pengaturan profil.</li><li>Kata sandi disimpan sebagai hash; portal tidak menyimpan kata sandi dalam bentuk yang dapat dibaca.</li><li>QR akun dipakai untuk verifikasi keanggotaan. QR presensi dan catatan waktu/status dipakai untuk administrasi kehadiran.</li><li>Preferensi dan langganan push hanya disimpan jika fitur terkait digunakan atau diaktifkan.</li><li>Data teknis dasar yang dikirim otomatis oleh browser dapat tercatat di log operasional untuk keamanan dan pemecahan masalah.</li></ul>
+    <h2>Tujuan dan pembagian</h2>
+    <p>Data digunakan untuk autentikasi, pengelolaan anggota, presensi, jadwal, pengumuman, dan keamanan portal. Data tidak dijual atau dipakai untuk iklan. Akses dibatasi kepada pengurus yang membutuhkannya untuk menjalankan tugas. Layanan infrastruktur dapat memproses data teknis seperlunya agar portal bekerja.</p>
+    <h2>Penyimpanan dan pilihan</h2>
+    <p>Data akun disimpan selama akun digunakan dan sesuai kebutuhan administrasi. Anda dapat meminta koreksi atau penghapusan kepada pengurus melalui kanal kontak organisasi. Penghapusan dapat menghilangkan akses dan catatan yang terkait, kecuali informasi tertentu perlu disimpan untuk administrasi atau kewajiban yang berlaku. Anda dapat mematikan notifikasi push dari pengaturan perangkat atau portal.</p>
+    <h2>Keamanan dan kontak</h2>
+    <p>Pengurus menerapkan perlindungan yang wajar, tetapi tidak ada layanan daring yang dapat menjamin keamanan mutlak. Untuk pertanyaan, koreksi, atau penghapusan data, hubungi administrator Paskibra melalui kanal resmi organisasi.</p>
+    {% else %}
+    <h1>Syarat Layanan</h1>
+    <p class="legal-updated">Versi {{ terms_version }} · Berlaku mulai 25 Oktober 2026</p>
+    <p>Dengan membuat akun atau memakai portal Paskibra, Anda setuju menggunakan layanan ini untuk kegiatan keanggotaan dan mengikuti ketentuan berikut.</p>
+    <h2>Penggunaan akun</h2>
+    <ul><li>Berikan nama, kelas, dan username yang benar serta jaga kerahasiaan kata sandi dan QR akun.</li><li>Gunakan portal dengan sopan, jangan mencoba mengakses akun atau data orang lain, dan jangan mengganggu layanan.</li><li>Akun baru perlu ditinjau oleh pengurus sebelum mendapat akses penuh. Pengurus dapat membatasi akses bila diperlukan untuk keamanan atau tata tertib.</li></ul>
+    <h2>Fitur dan data</h2>
+    <p>Portal menyediakan fitur keanggotaan, presensi, jadwal, pengumuman, dan notifikasi. Data akun dan penggunaan fitur diproses sebagaimana dijelaskan dalam <a href="{{ url_for('auth.privacy') }}">Pemberitahuan Privasi</a>. Notifikasi browser bersifat pilihan dan meminta izin browser Anda.</p>
+    <h2>Ketersediaan dan perubahan</h2>
+    <p>Fitur dapat diperbarui, dihentikan sementara, atau diubah untuk pemeliharaan dan kebutuhan organisasi. Pengurus akan berupaya menjaga ketersediaan dan keamanan layanan, tetapi tidak menjanjikan layanan selalu bebas gangguan atau bebas kesalahan.</p>
+    <h2>Kontak dan pembaruan</h2>
+    <p>Jika ada pertanyaan atau kendala, hubungi administrator Paskibra melalui kanal resmi organisasi. Syarat dapat diperbarui; versi terbaru ditampilkan di halaman ini.</p>
+    {% endif %}
+    <div class="legal-actions"><a class="btn btn-primary" href="{{ url_for('auth.register') }}">Kembali ke pendaftaran</a><a class="btn btn-tonal" href="{{ url_for('auth.privacy' if document_type == 'terms' else 'auth.terms') }}">{% if document_type == 'terms' %}Baca pemberitahuan privasi{% else %}Baca syarat layanan{% endif %}</a></div>
+</article>
+{% endblock %}

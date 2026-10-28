@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center;">
+    <div style="width: 120px; height: 120px; background: var(--md-sys-color-surface-container-high); border-radius: 40px; display: flex; align-items: center; justify-content: center; color: var(--md-sys-color-primary); margin-bottom: 32px;">
+        <span class="material-symbols-outlined" style="font-size: 64px;">cloud_off</span>
+    </div>
+    
+    <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 12px;">Kamu Sedang Offline</h1>
+    <p style="color: var(--md-sys-color-on-surface-variant); max-width: 320px; line-height: 1.6; margin-bottom: 32px;">
+        Halaman ini memerlukan koneksi internet untuk pertama kali dimuat. Silakan periksa koneksi Anda dan coba lagi.
+    </p>
+    
+    <button onclick="window.location.reload()" class="btn btn-primary" style="height: 56px; padding: 0 32px; border-radius: 28px;">
+        <span class="material-symbols-outlined">refresh</span>
+        <span>Coba Lagi</span>
+    </button>
+</div>
+{% endblock %}

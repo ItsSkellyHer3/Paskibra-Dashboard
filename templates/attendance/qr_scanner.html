@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Pemindai Presensi{% endblock %}
+
+{% block head %}
+<script src="https://unpkg.com/html5-qrcode" defer></script>
+<style>
+    .attendance-scan-page { max-width:1120px; margin:0 auto; display:grid; gap:18px; }
+    .scan-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .scan-head h1 { margin:0; font-size:clamp(1.55rem,3vw,2.1rem); letter-spacing:-.04em; }
+    .scan-head p { margin:6px 0 0; color:var(--md-sys-color-on-surface-variant); }
+    .scan-head .btn { min-height:42px; border-radius:11px; }
+    .attendance-scan-grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr); align-items:start; gap:16px; }
+    .camera-panel,.scan-info-panel { min-width:0; padding:18px; border:1px solid var(--md-sys-color-outline-variant); border-radius:17px; background:var(--md-sys-color-surface); }
+    .camera-panel-top { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+    .camera-panel-top b { font-size:.95rem; }
+    .camera-indicator { display:flex; align-items:center; gap:7px; color:var(--md-sys-color-outline); font-size:.76rem; }
+    .camera-indicator i { width:8px; height:8px; border-radius:50%; background:currentColor; }
+    .camera-indicator.active { color:#2c8545; }
+    .camera-indicator.busy { color:#ac720c; }
+    .video-wrapper { position:relative; width:100%; aspect-ratio:4/3; background:#11151a; border-radius:14px; overflow:hidden; }
+    #reader { width:100%; height:100%; }
+    #reader video { width:100%!important; height:100%!important; object-fit:cover!important; }
+    #reader__dashboard_section_csr,#reader__dashboard_section_swaplink { display:none!important; }
+    .camera-placeholder { position:absolute; inset:0; z-index:2; display:grid; place-content:center; justify-items:center; gap:9px; color:#fff; background:radial-gradient(ellipse at center,#202833,#11151a 70%); text-align:center; pointer-events:none; }
+    .camera-placeholder .material-symbols-outlined { font-size:48px; color:#a9b4c2; }
+    .camera-placeholder p { max-width:28ch; margin:0; padding:0 14px; color:#c1c8d0; font-size:.84rem; }
+    .scan-controls { display:flex; gap:9px; margin-top:12px; }
+    .scan-controls .btn { flex:1; min-height:44px; border-radius:11px; }
+    .result-card { display:none; align-items:flex-start; gap:12px; padding:14px; margin-top:12px; border-radius:12px; }
+    .result-card.visible { display:flex; }
+    .result-card.success-bg { background:#eaf5ec; color:#1e6936; }
+    .result-card.error-bg { background:#fcebea; color:#a8322b; }
+    .result-card.warning-bg { background:#fff5df; color:#8b5900; }
+    .result-icon { font-size:23px; }
+    .result-card h3 { margin:0; font-size:.88rem; }
+    .result-card p { margin:4px 0 0; font-size:.8rem; line-height:1.45; }
+    .scan-info-panel h2 { margin:0; font-size:.98rem; }
+    .scan-info-panel>p { margin:6px 0 17px; color:var(--md-sys-color-outline); font-size:.8rem; line-height:1.5; }
+    .scan-session-stat { display:flex; justify-content:space-between; align-items:center; padding:13px; border-radius:12px; background:var(--md-sys-color-surface-container-low); }
+    .scan-session-stat span { color:var(--md-sys-color-on-surface-variant); font-size:.82rem; }
+    .scan-session-stat b { font-size:1.15rem; }
+    .scan-tip { display:flex; gap:10px; padding:13px 0; border-top:1px solid var(--md-sys-color-outline-variant); }
+    .scan-tip .material-symbols-outlined { color:var(--md-sys-color-primary); font-size:20px; }
+    .scan-tip b { display:block; font-size:.82rem; }
+    .scan-tip span { display:block; margin-top:3px; color:var(--md-sys-color-outline); font-size:.75rem; line-height:1.4; }
+    @media(max-width:820px) { .attendance-scan-grid { grid-template-columns:1fr; } }
+    @media(max-width:520px) { .camera-panel,.scan-info-panel { padding:13px; } .video-wrapper { aspect-ratio:1/1; } .scan-head { align-items:stretch; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="attendance-scan-page fade-in">
+    <header class="scan-head">
+        <div><h1>Pemindai presensi</h1><p>Pindai QR presensi anggota untuk mencatat kehadiran hari ini.</p></div>
+        <a href="{{ url_for('admin.attendance') }}" class="btn btn-tonal"><span class="material-symbols-outlined">bar_chart</span> Lihat rekap</a>
+    </header>
+    <div class="attendance-scan-grid">
+        <section class="camera-panel">
+            <div class="camera-panel-top"><b>Kamera</b><span id="camera-indicator" class="camera-indicator"><i></i><span id="camera-label">Siap digunakan</span></span></div>
+            <div class="video-wrapper"><div id="reader"></div><div id="placeholder" class="camera-placeholder"><span class="material-symbols-outlined">qr_code_scanner</span><p>Kamera akan aktif setelah Anda menekan Mulai pindai.</p></div></div>
+            <div class="scan-controls">
+                <button id="start-btn" type="button" onclick="startScanner()" class="btn btn-primary"><span class="material-symbols-outlined">videocam</span> Mulai pindai</button>
+                <button id="stop-btn" type="button" onclick="stopScanner()" class="btn btn-tonal" style="display:none"><span class="material-symbols-outlined">videocam_off</span> Hentikan</button>
+            </div>
+            <div id="scan-result" class="result-card" role="status" aria-live="polite">
+                <span id="result-icon" class="material-symbols-outlined result-icon"></span>
+                <div><h3 id="result-title"></h3><p id="result-message"></p></div>
+            </div>
+        </section>
+        <aside class="scan-info-panel">
+            <h2>Sesi pemindaian</h2><p>Ringkasan ini hanya berlaku selama halaman pemindai terbuka.</p>
+            <div class="scan-session-stat"><span>Presensi berhasil dicatat</span><b id="session-count">0</b></div>
+            <div style="margin-top:16px">
+                <div class="scan-tip"><span class="material-symbols-outlined">qr_code_2</span><div><b>Gunakan QR presensi</b><span>QR identitas profil tidak bisa dipakai untuk mencatat kehadiran.</span></div></div>
+                <div class="scan-tip"><span class="material-symbols-outlined">center_focus_strong</span><div><b>Pastikan QR fokus</b><span>Jaga pencahayaan cukup dan tahan ponsel beberapa saat.</span></div></div>
+                <div class="scan-tip"><span class="material-symbols-outlined">notifications_active</span><div><b>Konfirmasi langsung</b><span>Hasil muncul di halaman ini dan notifikasi dikirim ke anggota.</span></div></div>
+            </div>
+        </aside>
+    </div>
+</main>
+<script>
+    let html5QrCode = null;
+    let scannerRunning = false;
+    let scannerStarting = false;
+    let isProcessing = false;
+    let sessionCount = 0;
+    function setCameraState(label, mode='') {
+        document.getElementById('camera-indicator').className = `camera-indicator ${mode}`;
+        document.getElementById('camera-label').textContent = label;
+    }
+    async function startScanner() {
+        if (scannerRunning || scannerStarting) return;
+        if (!window.Html5Qrcode) {
+            showResult({status:'error', message:'Pemindai belum siap dimuat. Muat ulang halaman dan coba kembali.'});
+            return;
+        }
+        scannerStarting = true;
+        setCameraState('Menghubungkan kamera…','busy');
+        document.getElementById('start-btn').disabled = true;
+        try {
+            html5QrCode = html5QrCode || new Html5Qrcode('reader');
+            await html5QrCode.start({facingMode:'environment'}, {fps:10, qrbox:250, aspectRatio:4/3}, onScanSuccess);
+            scannerRunning = true;
+            document.getElementById('placeholder').hidden = true;
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('stop-btn').style.display = 'inline-flex';
+            setCameraState('Kamera aktif','active');
+        } catch (error) {
+            document.getElementById('placeholder').hidden = false;
+            document.getElementById('start-btn').style.display = 'inline-flex';
+            document.getElementById('stop-btn').style.display = 'none';
+            setCameraState('Kamera tidak aktif');
+            showResult({status:'error', message:'Kamera tidak dapat dibuka. Periksa izin kamera dan koneksi aman.'});
+        } finally {
+            scannerStarting = false;
+            document.getElementById('start-btn').disabled = false;
+        }
+    }
+    async function stopScanner() {
+        if (html5QrCode && scannerRunning) {
+            try { await html5QrCode.stop(); } catch (error) { console.warn('Kamera sudah berhenti.', error); }
+        }
+        scannerRunning = false;
+        scannerStarting = false;
+        document.getElementById('placeholder').hidden = false;
+        document.getElementById('start-btn').style.display = 'inline-flex';
+        document.getElementById('stop-btn').style.display = 'none';
+        setCameraState('Siap digunakan');
+    }
+    async function onScanSuccess(decodedText) {
+        if (isProcessing) return;
+        isProcessing = true;
+        if (navigator.vibrate) navigator.vibrate(60);
+        try {
+            const response = await fetch("{{ url_for('attendance.scan') }}", {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({qr_uuid:decodedText})
+            });
+            const data = await response.json();
+            showResult(data);
+            if (data.status === 'success') {
+                sessionCount += 1;
+                document.getElementById('session-count').textContent = sessionCount;
+            }
+        } catch (error) {
+            showResult({status:'error', message:'Tidak dapat menghubungi server. Periksa koneksi lalu coba pindai kembali.'});
+        } finally {
+            window.setTimeout(() => { isProcessing = false; }, 1300);
+        }
+    }
+    function showResult(data) {
+        const card = document.getElementById('scan-result');
+        const success = data.status === 'success';
+        const warning = data.status === 'warning';
+        card.className = `result-card visible ${success ? 'success-bg' : warning ? 'warning-bg' : 'error-bg'}`;
+        document.getElementById('result-icon').textContent = success ? 'task_alt' : warning ? 'info' : 'error';
+        document.getElementById('result-title').textContent = data.user?.full_name || (success ? 'Presensi tercatat' : warning ? 'Sudah tercatat' : 'QR tidak dapat diproses');
+        document.getElementById('result-message').textContent = data.message || 'Pemindaian selesai.';
+    }
+    window.addEventListener('beforeunload', () => {
+        if (scannerRunning && html5QrCode) html5QrCode.stop().catch(() => {});
+    });
+</script>
+{% endblock %}

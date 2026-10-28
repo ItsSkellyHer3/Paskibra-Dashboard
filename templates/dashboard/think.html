@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Think Hub{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h1 style="font-weight: 500;">Think Hub</h1>
+            <p style="color: var(--md-sys-color-on-surface-variant);">Bagikan ide kreatif untuk kemajuan Paskibra.</p>
+        </div>
+        <button class="btn btn-primary" onclick="document.getElementById('idea-modal').style.display='flex'">
+            <span class="material-symbols-outlined">lightbulb</span>
+            <span>Bagikan Ide</span>
+        </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px;">
+        {% for idea in ideas %}
+        <div class="card" style="background: var(--md-sys-color-surface); display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <span class="chip" style="background: var(--md-sys-color-secondary-container); font-size: 0.75rem;">{{ idea.status.upper() }}</span>
+            </div>
+            <h3 style="margin: 0 0 8px; font-weight: 600;">{{ idea.title }}</h3>
+            <p style="margin: 0; font-size: 0.875rem; color: var(--md-sys-color-on-surface-variant); line-height: 1.5; flex: 1;">
+                {{ idea.description }}
+            </p>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--md-sys-color-outline-variant); font-size: 0.75rem; color: var(--md-sys-color-outline);">
+                Diusulkan oleh <strong>{{ idea.full_name }}</strong>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Idea Modal (Hidden by default) -->
+    <div id="idea-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 24px;">
+        <div class="card slide-up" style="background: var(--md-sys-color-surface); max-width: 500px; width: 100%; box-shadow: var(--elevation-3);">
+            <h2 style="margin-top: 0;">Usulkan Ide Baru</h2>
+            <form action="{{ url_for('dashboard.think') }}" method="POST">
+                <div class="text-field">
+                    <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 8px;">Judul Ide</label>
+                    <input type="text" name="title" required placeholder="Apa nama ide Anda?">
+                </div>
+                <div class="text-field" style="height: auto;">
+                    <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 8px;">Detail Ide</label>
+                    <textarea name="description" required style="width: 100%; min-height: 120px; border-radius: var(--radius-xs); background: var(--md-sys-color-surface-container-high); border: none; border-bottom: 2px solid var(--md-sys-color-outline); padding: 12px 16px; font-family: inherit;" placeholder="Ceritakan lebih lanjut tentang ide Anda..."></textarea>
+                </div>
+                <div style="margin-top: 24px; display: flex; gap: 12px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Kirim Ide</button>
+                    <button type="button" class="btn btn-tonal" onclick="document.getElementById('idea-modal').style.display='none'">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

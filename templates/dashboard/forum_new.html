@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title_bar %}Topik Baru{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <div style="max-width: 700px; margin: 0 auto; width: 100%;">
+        <div style="margin-bottom: 32px; display: flex; align-items: center; gap: 16px;">
+            <a href="{{ url_for('dashboard.forum') }}" class="btn btn-icon" style="background: var(--md-sys-color-surface-container-high);">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <div>
+                <h1 style="margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">Buat Topik Baru</h1>
+                <p style="color: var(--md-sys-color-outline); margin: 0; font-size: 0.9rem;">Mulai diskusi baru dengan anggota lain.</p>
+            </div>
+        </div>
+
+        <div class="card" style="background: var(--md-sys-color-surface); border-radius: 28px; padding: clamp(16px, 5vw, 32px); border: 1px solid var(--md-sys-color-outline-variant); width: 100%; box-sizing: border-box;">
+            <form action="{{ url_for('dashboard.new_forum_topic') }}" method="POST">
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em;">Judul Topik</label>
+                        <input type="text" name="title" required placeholder="Apa yang ingin Anda diskusikan?" style="width: 100%; height: 56px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 1rem; color: var(--md-sys-color-on-surface); box-sizing: border-box;">
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em;">Isi Diskusi</label>
+                        <textarea name="content" required placeholder="Berikan detail atau pertanyaan Anda secara lengkap..." style="width: 100%; min-height: 200px; padding: 16px; border-radius: 14px; border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-low); font-family: inherit; font-size: 1rem; resize: vertical; color: var(--md-sys-color-on-surface); box-sizing: border-box;"></textarea>
+                    </div>
+
+                    <div style="margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button type="submit" class="btn btn-primary" style="flex: 2; min-width: 180px; height: 56px; border-radius: 14px;">
+                            <span class="material-symbols-outlined">publish</span>
+                            <span>Terbitkan Topik</span>
+                        </button>
+                        <a href="{{ url_for('dashboard.forum') }}" class="btn btn-tonal" style="flex: 1; min-width: 100px; height: 56px; border-radius: 14px;">
+                            <span>Batal</span>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
