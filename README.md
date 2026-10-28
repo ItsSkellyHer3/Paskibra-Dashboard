@@ -102,4 +102,4 @@ Install pinned-compatible dependency ranges from `requirements.txt`:
 
 ## License
 
-No license is currently included. All rights remain with the copyright holder unless a license is added.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
